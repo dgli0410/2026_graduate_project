@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "쇼츠 AI 보관함 (Demo)",
+  "version": "0.1.0",
+  "description": "유튜브 쇼츠를 저장하면 AI가 대신 봐주고, 말로 물어보면 그 장면으로 데려다줍니다.",
+  "permissions": ["sidePanel", "storage", "tabs", "scripting"],
+  "host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://*.youtube.com/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "쇼츠 AI 보관함 열기"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*", "https://m.youtube.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ]
+}

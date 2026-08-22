@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <title>쇼츠 AI 보관함</title>
+    <link rel="stylesheet" href="sidepanel.css" />
+  </head>
+  <body>
+    <header>
+      <div class="brand">
+        <strong>쇼츠 AI 보관함</strong>
+        <span id="server-state" class="pill pill-off">서버 확인 중</span>
+      </div>
+      <div class="current" id="current-video">
+        <div class="current-title" id="current-title">유튜브 쇼츠를 열어주세요</div>
+        <div class="current-sub" id="current-sub"></div>
+      </div>
+      <div class="row">
+        <select id="playlist-select" title="재생목록"></select>
+        <button id="new-playlist" class="ghost" title="재생목록 만들기">＋</button>
+      </div>
+      <button id="save-btn" class="primary" disabled>이 쇼츠 저장</button>
+      <div id="capture" class="capture hidden">
+        <div id="capture-msg" class="capture-msg">
+          영상을 재생하며 분석 준비 중입니다. 이 탭에 머물러 주세요.
+        </div>
+        <div class="bar"><i id="capture-fill"></i></div>
+      </div>
+      <div id="toast" class="toast hidden"></div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="library">보관함</button>
+      <button class="tab" data-tab="search">검색</button>
+    </nav>
+
+    <main>
+      <section id="tab-library" class="tab-body">
+        <div id="library-list" class="list"></div>
+        <p id="library-empty" class="empty">저장한 쇼츠가 없습니다.</p>
+      </section>
+
+      <section id="tab-search" class="tab-body hidden">
+        <div class="search-box">
+          <input id="search-input" type="text" placeholder="예: 감자 언제 넣어?" />
+          <button id="search-btn" class="primary small">검색</button>
+        </div>
+        <label class="checkbox">
+          <input type="checkbox" id="scope-playlist" />
+          <span>지금 고른 재생목록 안에서만 찾기</span>
+        </label>
+        <div id="answer" class="answer hidden"></div>
+        <div id="search-results" class="list"></div>
+      </section>
+    </main>
+
+    <div id="detail" class="detail hidden">
+      <div class="detail-head">
+        <button id="detail-back" class="ghost">← 보관함</button>
+        <button id="detail-delete" class="danger small">삭제</button>
+      </div>
+      <div id="detail-body"></div>
+    </div>
+
+    <script src="sidepanel.js"></script>
+  </body>
+</html>

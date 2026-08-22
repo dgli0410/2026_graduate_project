@@ -1,0 +1,21 @@
+fastapi
+uvicorn[standard]
+python-multipart
+google-genai
+qdrant-client
+numpy
+Pillow
+python-dotenv
+
+# --- 진짜 모델로 갈아끼울 때만 (담당자별) --------------------------------
+# C · WhisperX  (ASR_BACKEND=whisperx)
+# whisperx
+# C · OCR       (OCR_BACKEND=easyocr)
+# easyocr
+# D · BGE-M3    (TEXT_EMBED_BACKEND=bge)
+# FlagEmbedding>=1.2
+# D · SigLIP2   (IMAGE_EMBED_BACKEND=siglip)
+# torch
+# transformers>=4.45
+# peft>=0.12
+# accelerate

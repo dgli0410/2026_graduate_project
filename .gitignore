@@ -1,0 +1,24 @@
+# 비밀 — 각자 자기 키를 씁니다. 절대 커밋하지 않습니다.
+.env
+.env.local
+.env.*.local
+
+# 가상환경
+.venv/
+venv/
+
+# 실행하면 생기는 것 (DB, Qdrant 창고, 업로드된 프레임/오디오)
+data/
+
+# 파이썬
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# 에디터 / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
