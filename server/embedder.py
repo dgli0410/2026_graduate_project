@@ -21,9 +21,9 @@ def l2_normalize(arr: np.ndarray) -> np.ndarray:
 
 
 def _backend() -> str:
-    from server.config import TEXT_EMBED_BACKEND
+    from server.config import backend
 
-    return TEXT_EMBED_BACKEND
+    return backend("text_embed")
 
 
 def dim() -> int:

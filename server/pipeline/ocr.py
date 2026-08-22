@@ -12,14 +12,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from server.config import OCR_BACKEND
+from server.config import backend
 
 _reader = None
 
 
 def uses_grid() -> bool:
     """True 면 caption.describe() 가 반환한 ocr_text 를 그대로 씁니다."""
-    return OCR_BACKEND != "easyocr"
+    return backend("ocr") != "easyocr"
 
 
 def recognize_all(frames: list[tuple[float, Path]]) -> list[dict]:

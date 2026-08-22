@@ -12,7 +12,7 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from server.config import ASR_BACKEND, CAPTION_MODEL, COMPUTE_TYPE, DEVICE, WHISPER_MODEL
+from server.config import CAPTION_MODEL, COMPUTE_TYPE, DEVICE, WHISPER_MODEL, backend
 
 _whisper_model = None
 
@@ -101,6 +101,6 @@ def transcribe(audio: Path) -> list[dict]:
     """오디오 파일 -> [{start, end, text}, ...]"""
     if not audio.is_file() or audio.stat().st_size == 0:
         return []
-    if ASR_BACKEND == "whisperx":
+    if backend("asr") == "whisperx":
         return _transcribe_whisperx(audio)
     return _transcribe_gemini(audio)

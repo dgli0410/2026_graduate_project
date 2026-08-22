@@ -26,9 +26,9 @@ _dim: int | None = None
 
 
 def _backend() -> str:
-    from server.config import IMAGE_EMBED_BACKEND
+    from server.config import backend
 
-    return IMAGE_EMBED_BACKEND
+    return backend("image_embed")
 
 
 def is_enabled() -> bool:
