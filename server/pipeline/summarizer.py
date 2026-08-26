@@ -18,6 +18,10 @@ class VideoSummary(BaseModel):
     headline: str = Field(description="영상 내용을 한 문장으로")
     keywords: list[str] = Field(description="핵심 키워드 3~6개")
     steps: list[SummaryStep] = Field(description="시간 순 주요 단계 3~7개")
+    ingredients: list[str] = Field(
+        default_factory=list,
+        description="요리 재료·준비물 이름 목록. 요리·만들기 영상이 아니면 빈 목록",
+    )
 
 
 PROMPT = """
@@ -27,6 +31,8 @@ PROMPT = """
 - headline: 영상 내용을 한 문장으로
 - keywords: 핵심 키워드 3~6개
 - steps: 시간 순으로 주요 단계 3~7개 (time 은 장면 카드에 적힌 초를 그대로 써)
+- ingredients: 말·자막·장면에 나온 재료나 준비물 이름만 (수량 빼고 "감자"처럼 검색하기 좋은 이름으로,
+  요리·만들기 영상이 아니면 빈 목록)
 
 한국어로 적어줘.
 
@@ -56,6 +62,7 @@ def _fallback_summary(title: str, segments: list[dict[str, Any]]) -> dict[str, A
         "headline": title or "요약을 생성하지 못했습니다.",
         "keywords": [],
         "steps": [s for s in steps if s["label"]],
+        "ingredients": [],
         "degraded": True,
     }
 

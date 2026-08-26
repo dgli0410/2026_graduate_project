@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from server import db, embedder, image_embedder, media, search as search_mod, vectors
+from server import db, embedder, image_embedder, media, search as search_mod, shopping, vectors
 from server.config import (
     ASR_BACKEND,
     CAPTION_MODEL,
@@ -125,6 +125,7 @@ def health() -> dict[str, Any]:
         "segment_seconds": SEGMENT_SECONDS,
         "max_gemini_calls_per_video": MAX_GEMINI_CALLS_PER_VIDEO,
         "image_search_enabled": image_embedder.is_enabled(),
+        "shopping_price_enabled": shopping.is_enabled(),
         "queue_size": worker.queue_size(),
     }
 
@@ -298,6 +299,22 @@ def playlist_remove_video(
 ) -> dict[str, Any]:
     db.remove_from_playlist(user_id, playlist_id, video_id)
     return {"ok": True}
+
+
+# --- 재료 → 구매 링크 (고급: 네이버쇼핑 API 가격) ---------------------------
+
+@app.get("/api/shopping")
+def shopping_search(query: str = "", user_id: str = Depends(current_user)) -> dict[str, Any]:
+    """재료 이름으로 최저가를 찾아줍니다. 키가 없으면 503 — 확장은 링크만 보여줍니다."""
+    if not shopping.is_enabled():
+        raise HTTPException(status_code=503, detail="NAVER_CLIENT_ID/SECRET 이 설정되지 않았습니다.")
+    if not query.strip():
+        raise HTTPException(status_code=400, detail="query 가 비어 있습니다.")
+    try:
+        items = shopping.search(query)
+    except Exception as exc:  # noqa: BLE001 - 외부 API 실패가 화면을 깨면 안 됩니다
+        raise HTTPException(status_code=502, detail=f"네이버쇼핑 API 오류: {exc}") from exc
+    return {"query": query, "items": items}
 
 
 # --- 단계 12 · 검색 --------------------------------------------------------

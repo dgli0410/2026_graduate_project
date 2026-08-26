@@ -97,3 +97,11 @@ main { padding: 10px; }
 .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .steps li { display: flex; gap: 8px; align-items: center; }
 .kw { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); margin: 0 4px 4px 0; }
+
+/* 재료 → 구매 링크 */
+.ings { display: flex; flex-direction: column; gap: 6px; }
+.ing { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); flex-wrap: wrap; }
+.ing-name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ing-price { font-size: 12px; color: var(--ok); text-decoration: none; cursor: pointer; white-space: nowrap; }
+.ing-price:hover { text-decoration: underline; }
+.shop-btn { font-size: 11px; padding: 3px 8px; flex-shrink: 0; }

@@ -6,6 +6,7 @@ let currentInfo = null;
 let playlists = [];
 let selectedPlaylist = "";
 let pollTimer = null;
+let serverHealth = null;
 
 // --- 기본 도구 -------------------------------------------------------------
 
@@ -419,6 +420,61 @@ async function runSearch() {
   }
 }
 
+// --- 재료 → 구매 링크 ------------------------------------------------------
+
+function openTab(url) {
+  chrome.tabs.create({ url });
+}
+
+// 기본: API 없이 검색 URL 조합. 고급: 서버에 네이버 키가 있으면 최저가를 붙입니다.
+function ingredientRow(name) {
+  const row = document.createElement("div");
+  row.className = "ing";
+
+  const label = document.createElement("span");
+  label.className = "ing-name";
+  label.textContent = name;
+  row.appendChild(label);
+
+  const price = document.createElement("a");
+  price.className = "ing-price hidden";
+  row.appendChild(price);
+
+  const coupang = document.createElement("button");
+  coupang.className = "shop-btn";
+  coupang.textContent = "쿠팡";
+  coupang.addEventListener("click", () =>
+    openTab(`https://www.coupang.com/np/search?q=${encodeURIComponent(name)}`)
+  );
+  row.appendChild(coupang);
+
+  const naver = document.createElement("button");
+  naver.className = "shop-btn";
+  naver.textContent = "N쇼핑";
+  naver.addEventListener("click", () =>
+    openTab(`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(name)}`)
+  );
+  row.appendChild(naver);
+
+  if (serverHealth?.shopping_price_enabled) {
+    api(`/api/shopping?query=${encodeURIComponent(name)}`)
+      .then((data) => {
+        const item = data.items?.[0];
+        if (!item || !item.price) return;
+        price.textContent = `최저 ${item.price.toLocaleString("ko-KR")}원`;
+        price.title = `${item.title} · ${item.mall}`;
+        price.href = "#";
+        price.addEventListener("click", (e) => {
+          e.preventDefault();
+          openTab(item.link);
+        });
+        price.classList.remove("hidden");
+      })
+      .catch(() => {}); // 가격은 덤입니다. 실패해도 링크는 그대로 씁니다.
+  }
+  return row;
+}
+
 // --- 상세 화면 -------------------------------------------------------------
 
 async function openDetail(videoId) {
@@ -456,6 +512,16 @@ async function openDetail(videoId) {
           wrap.appendChild(chip);
         });
         body.appendChild(wrap);
+      }
+
+      if (video.summary.ingredients?.length) {
+        const heading = document.createElement("h3");
+        heading.textContent = "재료 · 구매 링크";
+        body.appendChild(heading);
+        const list = document.createElement("div");
+        list.className = "ings";
+        video.summary.ingredients.forEach((name) => list.appendChild(ingredientRow(name)));
+        body.appendChild(list);
       }
 
       if (video.summary.steps?.length) {
@@ -543,6 +609,7 @@ async function checkServer() {
   const pill = $("server-state");
   try {
     const health = await api("/api/health");
+    serverHealth = health;
     const b = health.backends;
     pill.textContent = health.ok
       ? `${health.device} · 음성 ${b.asr} · 자막 ${b.ocr}${health.image_search_enabled ? " · 그림검색" : ""}`

@@ -32,6 +32,12 @@ ANSWER_MODEL = os.getenv("ANSWER_MODEL", "gemini-3.5-flash-lite")
 MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "3"))
 GRID_FRAMES = int(os.getenv("GRID_FRAMES", "6"))  # 그리드 한 장에 넣을 프레임 수
 
+# --- 네이버쇼핑 검색 API (선택) ---------------------------------------------
+# 없어도 됩니다. 키가 있으면 재료 구매 링크에 최저가가 붙습니다.
+# 발급: https://developers.naver.com/apps → 애플리케이션 등록 → "검색" API (무료)
+NAVER_CLIENT_ID = os.getenv("NAVER_CLIENT_ID", "").strip()
+NAVER_CLIENT_SECRET = os.getenv("NAVER_CLIENT_SECRET", "").strip()
+
 # --- 파이프라인 백엔드 -----------------------------------------------------
 # 각 단계는 "진짜 모델"과 "demo 대체품"을 같은 인터페이스로 갖습니다.
 # 담당자가 진짜 모델을 붙이면 .env 한 줄만 바꾸면 됩니다.
