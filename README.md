@@ -25,6 +25,26 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 
 ---
 
+## 미리보기
+
+<p align="center">
+  <img src="docs/screenshot-library.png" width="320" alt="보관함 — 저장한 쇼츠 목록과 요약 한 줄" />
+  <img src="docs/screenshot-detail.png" width="320" alt="상세 화면 — 재료·구매 링크와 사진 레시피" />
+</p>
+
+### 최근 업데이트
+
+| 기능 | 설명 |
+| --- | --- |
+| 제목·채널 추출 안정화 | 화면에 보이는 reel 만 읽어 preload 된 다른 쇼츠의 제목·채널이 섞이는 문제 수정 |
+| 재료 → 구매 링크 | 요약할 때 재료 목록을 함께 추출 → 재료마다 쿠팡/네이버쇼핑 검색 버튼. `.env` 에 `NAVER_CLIENT_ID/SECRET`(무료)을 넣으면 최저가·판매처 표시 |
+| 사진 레시피 | 주요 단계를 번호 배지 + 스틸컷 + 단계 설명 + ▶시점 버튼 카드로 표시. 프레임이 이미 저장돼 있어 서버 변경 없음 |
+
+> 예전에 분석한 영상은 재료가 비어 있습니다. 다시 저장할 필요 없이
+> `python -m tools.backfill_ingredients` 한 번이면 채워집니다.
+
+---
+
 > ### 🚀 처음 받았다면 (팀원용 요약)
 >
 > 1. `python -m venv .venv` → `.venv\Scripts\activate` → `pip install -r requirements.txt`
