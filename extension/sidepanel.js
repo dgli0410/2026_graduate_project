@@ -575,9 +575,14 @@ function bindEvents() {
     });
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
-    // 쇼츠를 스크롤로 넘겼을 때
-    if (message?.type === "SHORTS_CHANGED") setCurrentInfo(message.info);
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    // 쇼츠를 스크롤로 넘겼을 때 — 지금 실제로 보고 있는 탭에서 온 알림만 반영합니다.
+    // (여러 유튜브 탭이 열려 있으면 백그라운드 탭도 이 메시지를 보낼 수 있습니다.)
+    if (message?.type === "SHORTS_CHANGED") {
+      activeYoutubeTab().then((tab) => {
+        if (tab && sender.tab && tab.id === sender.tab.id) setCurrentInfo(message.info);
+      });
+    }
     // 추출 진행률
     if (message?.type === "CAPTURE_PROGRESS") {
       const label =

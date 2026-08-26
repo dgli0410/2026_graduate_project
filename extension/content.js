@@ -18,17 +18,28 @@ function currentVideoId() {
 }
 
 function activeReel() {
-  // 쇼츠는 여러 개가 DOM 에 동시에 존재합니다. 지금 보이는 것만 골라야 합니다.
-  return (
-    document.querySelector("ytd-reel-video-renderer[is-active]") ||
-    document.querySelector("#shorts-player") ||
-    document
-  );
+  // 쇼츠는 여러 개(이전/다음 포함)가 DOM 에 동시에 존재합니다. 지금 보이는 것만 골라야 합니다.
+  // is-active 갱신이 늦거나 빠질 때 #shorts-player/document 로 넘어가면, 그 안에 있는
+  // #channel-name·#text-container 같은 흔한 선택자가 다른(preload 된) reel 의 것과
+  // 매칭되어 제목·채널이 뒤바뀔 수 있습니다. 그래서 반드시 "지금 화면 중앙에 보이는"
+  // reel 하나로 좁혀서 반환합니다. 못 찾으면 null 을 반환해 잘못된 텍스트를 긁지 않습니다.
+  const marked = document.querySelector("ytd-reel-video-renderer[is-active]");
+  if (marked) return marked;
+
+  const reels = Array.from(document.querySelectorAll("ytd-reel-video-renderer"));
+  const center = window.innerHeight / 2;
+  const visible = reels.find((r) => {
+    const rect = r.getBoundingClientRect();
+    return rect.top <= center && rect.bottom >= center;
+  });
+  if (visible) return visible;
+
+  return document.querySelector("#shorts-player") || null;
 }
 
 function activeVideoElement() {
   const scope = activeReel();
-  const scoped = scope.querySelector && scope.querySelector("video");
+  const scoped = scope && scope.querySelector && scope.querySelector("video");
   if (scoped && scoped.readyState >= 2) return scoped;
 
   const videos = Array.from(document.querySelectorAll("video"));
@@ -47,8 +58,9 @@ function activeVideoElement() {
 }
 
 function textOf(root, selectors) {
+  if (!root || !root.querySelector) return "";
   for (const sel of selectors) {
-    const el = root.querySelector ? root.querySelector(sel) : null;
+    const el = root.querySelector(sel);
     const text = el && (el.textContent || "").trim();
     if (text) return text;
   }
@@ -68,7 +80,10 @@ function readVideoInfo() {
   if (!videoId) return null;
 
   const reel = activeReel();
-  const title =
+  // ⚠ reel 스코프 밖(document 전체)으로 눈을 돌리면, 미리 로드된 다른 쇼츠의 제목·채널이
+  // #channel-name 같은 흔한 선택자에 걸려 뒤바뀔 수 있습니다. reel 을 못 찾았을 때는
+  // 잘못된 값을 긁어오는 대신 빈 값으로 둡니다(화면엔 videoId 로 대체 표시됩니다).
+  const title = cleanTitle(
     textOf(reel, [
       "yt-shorts-video-title-view-model h2",
       "yt-shorts-video-title-view-model",
@@ -76,20 +91,21 @@ function readVideoInfo() {
       "h2.title",
       "#title h2",
       ".ytd-reel-player-header-renderer #video-title",
-    ]) ||
-    textOf(document, ["h1.ytd-watch-metadata", "#title h1", "meta[name='title']"]) ||
-    cleanTitle(document.title);
+    ])
+  );
 
-  const channel =
-    textOf(reel, ["#channel-name a", "yt-reel-channel-bar-view-model a", "#text-container"]) ||
-    textOf(document, ["#owner #channel-name a", "ytd-channel-name a"]);
+  const channel = textOf(reel, [
+    "#channel-name a",
+    "yt-reel-channel-bar-view-model a",
+    "#text-container",
+  ]);
 
   const video = activeVideoElement();
   const duration = video && isFinite(video.duration) ? video.duration : 0;
 
   return {
     videoId,
-    title: cleanTitle(title).slice(0, 200),
+    title: title.slice(0, 200),
     channel: channel.slice(0, 100),
     duration: Math.round(duration * 100) / 100,
     isShorts: location.pathname.startsWith("/shorts/"),
@@ -320,15 +336,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // --- 쇼츠 전환 감지 --------------------------------------------------------
 // 스크롤로 다음 쇼츠로 넘어가도 페이지가 새로 열리지 않으므로 직접 감지합니다.
-let lastVideoId = currentVideoId();
+let lastSent = null;
+
+function sameInfo(a, b) {
+  if (!a || !b) return a === b;
+  return (
+    a.videoId === b.videoId &&
+    a.title === b.title &&
+    a.channel === b.channel &&
+    a.duration === b.duration
+  );
+}
 
 function notifyIfChanged() {
   if (capturing) return; // 추출 중에는 흔들지 않습니다
-  const id = currentVideoId();
-  if (id && id !== lastVideoId) {
-    lastVideoId = id;
-    const info = readVideoInfo();
-    if (info) chrome.runtime.sendMessage({ type: "SHORTS_CHANGED", info }).catch(() => {});
+  if (document.hidden) return; // 지금 보이지 않는(백그라운드) 탭은 방송하지 않습니다
+  const info = readVideoInfo();
+  if (!info) return;
+  // videoId 만 비교하면 안 됩니다: URL 은 먼저 바뀌어도 제목·채널 DOM(is-active reel)은
+  // 전환 애니메이션이 끝난 뒤 늦게 채워집니다. 그 사이에 한 번만 읽고 끝내면 빈 값이나
+  // 이전 영상 정보가 영구히 고정됩니다. 그래서 매번 다시 읽어 "내용이 실제로 달라졌을
+  // 때"만 보내고, 다음 폴링에서 DOM 이 정정되면 스스로 다시 보내 고쳐지게 합니다.
+  if (!sameInfo(info, lastSent)) {
+    lastSent = info;
+    chrome.runtime.sendMessage({ type: "SHORTS_CHANGED", info }).catch(() => {});
   }
 }
 
