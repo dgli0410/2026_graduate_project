@@ -475,6 +475,64 @@ function ingredientRow(name) {
   return row;
 }
 
+// --- 사진 레시피 -----------------------------------------------------------
+
+// 단계 시각(step.time)이 속한 장면 카드를 찾습니다. 걸치는 카드가 없으면 가장 가까운 것.
+function segmentAt(segments, time) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const seg of segments || []) {
+    if (time >= seg.start_time && time < seg.end_time) return seg;
+    const dist = Math.abs(seg.start_time - time);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = seg;
+    }
+  }
+  return best;
+}
+
+function recipeStepCard(videoId, step, index, segment) {
+  const card = document.createElement("div");
+  card.className = "recipe-step";
+
+  const no = document.createElement("span");
+  no.className = "recipe-no";
+  no.textContent = index + 1;
+  card.appendChild(no);
+
+  if (segment?.frame_url) {
+    const img = document.createElement("img");
+    img.className = "recipe-frame";
+    img.src = `${API_BASE}${segment.frame_url}?u=${encodeURIComponent(userId)}`;
+    img.alt = "";
+    card.appendChild(img);
+  }
+
+  const main = document.createElement("div");
+  main.className = "recipe-main";
+
+  const label = document.createElement("div");
+  label.className = "recipe-label";
+  label.textContent = step.label;
+  main.appendChild(label);
+
+  const jump = document.createElement("button");
+  jump.className = "time-btn small";
+  jump.textContent = `▶ ${fmtTime(step.time)}`;
+  jump.addEventListener("click", () =>
+    jumpTo(
+      videoId,
+      Math.max(0, step.time - 1.5),
+      `https://www.youtube.com/watch?v=${videoId}&t=${Math.max(0, Math.floor(step.time - 1.5))}s`
+    )
+  );
+  main.appendChild(jump);
+
+  card.appendChild(main);
+  return card;
+}
+
 // --- 상세 화면 -------------------------------------------------------------
 
 async function openDetail(videoId) {
@@ -526,25 +584,13 @@ async function openDetail(videoId) {
 
       if (video.summary.steps?.length) {
         const heading = document.createElement("h3");
-        heading.textContent = "주요 단계";
+        heading.textContent = "사진 레시피";
         body.appendChild(heading);
-        const list = document.createElement("ul");
-        list.className = "steps";
-        video.summary.steps.forEach((step) => {
-          const li = document.createElement("li");
-          const button = document.createElement("button");
-          button.className = "time-btn small";
-          button.textContent = fmtTime(step.time);
-          button.addEventListener("click", () =>
-            jumpTo(
-              videoId,
-              Math.max(0, step.time - 1.5),
-              `https://www.youtube.com/watch?v=${videoId}&t=${Math.max(0, Math.floor(step.time - 1.5))}s`
-            )
-          );
-          li.appendChild(button);
-          li.appendChild(document.createTextNode(step.label));
-          list.appendChild(li);
+        const list = document.createElement("div");
+        list.className = "recipe";
+        video.summary.steps.forEach((step, index) => {
+          const segment = segmentAt(video.segments, step.time);
+          list.appendChild(recipeStepCard(videoId, step, index, segment));
         });
         body.appendChild(list);
       }

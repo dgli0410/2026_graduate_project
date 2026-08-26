@@ -105,3 +105,11 @@ main { padding: 10px; }
 .ing-price { font-size: 12px; color: var(--ok); text-decoration: none; cursor: pointer; white-space: nowrap; }
 .ing-price:hover { text-decoration: underline; }
 .shop-btn { font-size: 11px; padding: 3px 8px; flex-shrink: 0; }
+
+/* 사진 레시피 */
+.recipe { display: flex; flex-direction: column; gap: 8px; }
+.recipe-step { display: flex; gap: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); align-items: center; }
+.recipe-no { width: 20px; height: 20px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.recipe-frame { width: 54px; height: 96px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--line); }
+.recipe-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
+.recipe-label { font-size: 13px; }
