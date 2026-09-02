@@ -95,14 +95,24 @@ CONDITIONS: dict[str, dict] = {
     },
     "local": {
         "label": "로컬 모델",
-        "description": "WhisperX + EasyOCR + BGE-M3 + SigLIP2. 장면 설명만 Gemini 를 씁니다.",
+        "description": "Whisper + EasyOCR + BGE-M3 + SigLIP2. 장면 설명만 Gemini 를 씁니다.",
         "backends": {
+            # whisperx 가 깔려 있으면 그걸 쓰고, 없으면 같은 엔진인 faster-whisper 로 갑니다.
+            # (WhisperX 는 Python 3.14 를 지원하지 않습니다)
             "asr": "whisperx",
             "ocr": "easyocr",
             "text_embed": "bge",
             "image_embed": "siglip",
         },
-        "requires": ["whisperx", "easyocr", "FlagEmbedding", "torch", "transformers", "peft"],
+        # 각 항목은 "이것들 중 하나만 있으면 됨" 을 뜻합니다.
+        "requires": [
+            ["whisperx", "faster_whisper"],
+            ["easyocr"],
+            ["FlagEmbedding"],
+            ["torch"],
+            ["transformers"],
+            ["peft"],
+        ],
     },
 }
 DEFAULT_CONDITION = "gemini"
@@ -150,16 +160,34 @@ def collection_for(condition: str) -> str:
     return f"{QDRANT_COLLECTION}__{condition}"
 
 
-def condition_info(name: str) -> dict:
-    """조건 하나의 설명 + 필요한 패키지가 깔려 있는지."""
+def _installed(package: str) -> bool:
     import importlib.util
 
+    try:
+        return importlib.util.find_spec(package.replace("-", "_")) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def condition_info(name: str) -> dict:
+    """조건 하나의 설명 + 필요한 패키지가 깔려 있는지.
+
+    requires 의 각 항목은 대안 목록입니다. 하나만 깔려 있으면 충족으로 봅니다.
+    """
+    import sys
+
     spec = CONDITIONS[name]
-    missing = [
-        package
-        for package in spec["requires"]
-        if importlib.util.find_spec(package.replace("-", "_")) is None
-    ]
+    missing: list[str] = []
+    for alternatives in spec["requires"]:
+        if any(_installed(package) for package in alternatives):
+            continue
+        recommended = alternatives[0]
+        # WhisperX 는 Python 3.14 이상에서 설치되지 않습니다. 같은 엔진을 권합니다.
+        if recommended == "whisperx" and sys.version_info >= (3, 14):
+            recommended = next((p for p in alternatives if p != "whisperx"), recommended)
+            recommended = recommended.replace("_", "-")
+        missing.append(recommended)
+
     return {
         "name": name,
         "label": spec["label"],

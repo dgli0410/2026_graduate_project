@@ -39,7 +39,9 @@ def _recognize_easyocr(frames: list[tuple[float, Path]]) -> list[dict]:
     from server.config import DEVICE
 
     if _reader is None:
-        _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda")
+        # verbose=False: 첫 실행 때 뜨는 다운로드 진행바(█)가 한글 윈도우 콘솔(cp949)에서
+        # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
+        _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
 
     results: list[dict] = []
     for time_sec, path in frames:

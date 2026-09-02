@@ -218,7 +218,7 @@ python -m tools.run_condition --condition local   # 전부 재분석 (밤에 걸
 
 | 단계 | demo 기본값 | 진짜 | 바꾸는 법 | 담당 |
 | --- | --- | --- | --- | --- |
-| 4 음성 | Gemini | WhisperX | `pip install whisperx` → `ASR_BACKEND=whisperx` | C |
+| 4 음성 | Gemini | Whisper | `pip install faster-whisper` → `ASR_BACKEND=faster-whisper` | C |
 | 5 자막 | Gemini 그리드 | EasyOCR | `pip install easyocr` → `OCR_BACKEND=easyocr` | C |
 | 8 글 좌표 | Gemini 768차원 | BGE-M3 1024차원 | `pip install FlagEmbedding` → `TEXT_EMBED_BACKEND=bge` | D |
 | 8 그림 좌표 | 없음 | SigLIP2 | `pip install torch transformers peft` → `IMAGE_EMBED_BACKEND=siglip` | D |
@@ -226,6 +226,19 @@ python -m tools.run_condition --condition local   # 전부 재분석 (밤에 걸
 
 > ⚠ 좌표 백엔드를 바꾸면 벡터 차원이 달라집니다. `data/qdrant` 를 지우고
 > 저장된 영상을 다시 분석해야 합니다.
+
+### ⚠ WhisperX 와 Python 버전
+
+**WhisperX 는 Python 3.14 를 지원하지 않습니다** (모든 배포판이 `<3.14` 요구).
+3.14 를 쓰고 있다면 두 가지 길이 있습니다.
+
+| 방법 | 명령 | 얻는 것 / 잃는 것 |
+| --- | --- | --- |
+| **faster-whisper** (권장) | `pip install faster-whisper` | WhisperX 안에서 실제로 도는 **바로 그 엔진**(CTranslate2 Whisper). `word_timestamps` 로 **단어 단위 시각도 나옵니다.** wav2vec2 강제정렬만 빠집니다 |
+| Python 3.12 venv | `py -3.12 -m venv .venv312` | 진짜 WhisperX. 정렬까지 포함해 시각이 가장 정확 |
+
+코드는 `ASR_BACKEND=whisperx` 로 두고 whisperx 가 없으면 **자동으로
+faster-whisper 로 넘어갑니다.** 팀원마다 파이썬 버전이 달라도 그대로 돕니다.
 
 ## 7. 하이브리드 검색 — 실험할 지점
 

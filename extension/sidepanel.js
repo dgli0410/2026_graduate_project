@@ -475,7 +475,13 @@ function conditionCard(run) {
 
   const button = document.createElement("button");
   button.className = done ? "small" : "primary small";
-  button.textContent = running ? run.status_label : done ? "다시 분석" : "이 조건으로 분석";
+  if (!run.ready) {
+    // 왜 못 누르는지 버튼에 그대로 씁니다.
+    button.textContent = "패키지 설치 필요 ↓";
+    button.title = run.install_hint;
+  } else {
+    button.textContent = running ? run.status_label : done ? "다시 분석" : "이 조건으로 분석";
+  }
   button.disabled = !run.ready || running;
   button.addEventListener("click", () => runCondition(run.condition || run.name));
   head.appendChild(button);
@@ -505,7 +511,15 @@ function conditionCard(run) {
   if (!run.ready) {
     const install = document.createElement("div");
     install.className = "cond-install";
-    install.textContent = `${run.install_hint}  (약 5GB, CPU에서 영상당 3~5분)`;
+    const label = document.createElement("div");
+    label.textContent = "이 버튼을 누르려면 서버 쪽에서 먼저 설치하세요:";
+    label.style.marginBottom = "4px";
+    const code = document.createElement("code");
+    code.textContent = run.install_hint;
+    const note = document.createElement("div");
+    note.style.marginTop = "4px";
+    note.textContent = "모델 가중치 약 6GB (첫 실행 때 자동 다운로드) · 설치 후 서버를 다시 켜야 합니다";
+    install.append(label, code, note);
     box.appendChild(install);
   }
   return box;
