@@ -111,6 +111,7 @@ def main(argv: list[str]) -> int:
     print(f"\n{len(queued)}개 처리 중... ({args.poll}초마다 확인, Ctrl+C 로 나가도 서버는 계속 돕니다)")
     started = time.time()
     done: set[str] = set()
+    last_seen: dict[str, tuple] = {}  # 상태가 바뀔 때만 한 줄 찍기 위해
     while len(done) < len(queued):
         time.sleep(args.poll)
         for user, video_id, title in queued:
@@ -121,6 +122,14 @@ def main(argv: list[str]) -> int:
                 (r for r in detail.get("runs", []) if r.get("name") == args.condition), {}
             )
             status_name = run.get("status")
+            seen = (status_name, run.get("progress"))
+            if status_name not in ("ready", "failed") and last_seen.get(video_id) != seen:
+                last_seen[video_id] = seen
+                elapsed = int(time.time() - started)
+                print(
+                    f"  ⏳ {title[:34]:34} {run.get('progress', 0):3}% "
+                    f"{run.get('status_label', status_name)}  ({elapsed}초 경과)"
+                )
             if status_name == "ready":
                 done.add(video_id)
                 counts = run.get("counts", {})
