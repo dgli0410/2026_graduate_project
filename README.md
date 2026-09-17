@@ -1,3 +1,7 @@
+## 전체 파이프라인 아키텍처 링크 
+https://claude.ai/artifact/5WGjQ6R3eRwXhjYQ4oygU9
+
+
 # 쇼츠 AI 보관함 — Demo
 
 마스터 문서(확정본)의 파이프라인을 **한 노트북에서 끝까지 돌아가게** 만든 최소 구현입니다.
