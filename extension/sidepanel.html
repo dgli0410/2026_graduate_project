@@ -32,6 +32,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="library">보관함</button>
       <button class="tab" data-tab="search">검색</button>
+      <button class="tab" data-tab="compare">⚗ 비교</button>
     </nav>
 
     <main>
@@ -51,6 +52,34 @@
         </label>
         <div id="answer" class="answer hidden"></div>
         <div id="search-results" class="list"></div>
+      </section>
+
+      <!-- 비교 탭 · 같은 프레임·오디오를 다른 백엔드로 돌려 나란히 봅니다 -->
+      <section id="tab-compare" class="tab-body hidden">
+        <p class="note">
+          저장할 때 뽑아둔 <b>같은 프레임·오디오</b>를 백엔드만 바꿔 다시 분석합니다.
+          입력이 같으므로 차이는 순수하게 모델 차이입니다.
+        </p>
+
+        <label class="field">
+          <span>비교할 영상</span>
+          <select id="compare-video"></select>
+        </label>
+
+        <div id="condition-list" class="list"></div>
+
+        <div id="compare-table-wrap" class="hidden">
+          <h4>분석 결과 비교</h4>
+          <div class="table-scroll"><table id="compare-table"></table></div>
+        </div>
+
+        <h4>같은 질문으로 검색 비교</h4>
+        <div class="search-box">
+          <input id="compare-query" type="text" placeholder="예: 감자 언제 넣어?" />
+          <button id="compare-run" class="primary small">비교</button>
+        </div>
+        <div id="compare-agreement" class="agreement hidden"></div>
+        <div id="compare-results" class="list"></div>
       </section>
     </main>
 

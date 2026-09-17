@@ -303,10 +303,12 @@ function startPolling() {
     try {
       const data = await api("/api/pending");
       await loadLibrary();
-      if (data.pending.length === 0) {
+      if (data.pending_conditions?.length && compareVideoId) await loadConditions();
+      if (data.pending.length === 0 && !data.pending_conditions?.length) {
         clearInterval(pollTimer);
         pollTimer = null;
         await loadPlaylists();
+        if (compareVideoId) await loadConditions();
       }
     } catch (_) {
       clearInterval(pollTimer);
@@ -533,6 +535,248 @@ function recipeStepCard(videoId, step, index, segment) {
   return card;
 }
 
+// --- 비교 탭 ---------------------------------------------------------------
+// 같은 프레임·오디오를 다른 백엔드로 돌린 결과를 나란히 봅니다.
+// 보관함/검색 탭이 쓰는 기본 조건 데이터는 건드리지 않습니다.
+
+let compareVideoId = null;
+
+async function loadCompareVideos() {
+  const select = $("compare-video");
+  const previous = select.value;
+  try {
+    const data = await api("/api/videos");
+    const ready = data.videos.filter((v) => v.status === "ready");
+    select.innerHTML = "";
+    if (ready.length === 0) {
+      const option = document.createElement("option");
+      option.textContent = "분석 완료된 영상이 없습니다";
+      option.value = "";
+      select.appendChild(option);
+      compareVideoId = null;
+      $("condition-list").innerHTML = "";
+      return;
+    }
+    for (const video of ready) {
+      const option = document.createElement("option");
+      option.value = video.video_id;
+      option.textContent = video.title || video.video_id;
+      select.appendChild(option);
+    }
+    select.value = ready.some((v) => v.video_id === previous) ? previous : ready[0].video_id;
+    compareVideoId = select.value;
+    await loadConditions();
+  } catch (err) {
+    select.innerHTML = "";
+    toast(`영상 목록을 못 불러왔습니다: ${err.message}`, true);
+  }
+}
+
+function conditionCard(run) {
+  const box = document.createElement("div");
+  box.className = `cond${run.ready ? " ready" : ""}`;
+
+  const head = document.createElement("div");
+  head.className = "cond-head";
+
+  const name = document.createElement("div");
+  name.className = "cond-name";
+  name.textContent = run.label;
+  head.appendChild(name);
+
+  const done = run.status === "ready";
+  const running = run.status && !["ready", "failed", "none"].includes(run.status);
+
+  const button = document.createElement("button");
+  button.className = done ? "small" : "primary small";
+  if (!run.ready) {
+    // 왜 못 누르는지 버튼에 그대로 씁니다.
+    button.textContent = "패키지 설치 필요 ↓";
+    button.title = run.install_hint;
+  } else {
+    button.textContent = running ? run.status_label : done ? "다시 분석" : "이 조건으로 분석";
+  }
+  button.disabled = !run.ready || running;
+  button.addEventListener("click", () => runCondition(run.condition || run.name));
+  head.appendChild(button);
+  box.appendChild(head);
+
+  const desc = document.createElement("div");
+  desc.className = "cond-desc";
+  desc.textContent = run.description;
+  box.appendChild(desc);
+
+  const backends = document.createElement("div");
+  backends.className = "cond-backends";
+  backends.textContent = `음성 ${run.backends.asr} · 자막 ${run.backends.ocr} · 글좌표 ${run.backends.text_embed} · 그림좌표 ${run.backends.image_embed}`;
+  box.appendChild(backends);
+
+  const status = document.createElement("div");
+  status.className = `status ${run.status}`;
+  status.textContent = done
+    ? `✅ 분석됨 · 장면 ${run.counts?.segments ?? "?"}장 · ${run.total_seconds ?? "?"}초`
+    : run.status === "failed"
+      ? `실패: ${run.error}`
+      : running
+        ? run.status_label
+        : "아직 안 돌렸습니다";
+  box.appendChild(status);
+
+  if (!run.ready) {
+    const install = document.createElement("div");
+    install.className = "cond-install";
+    const label = document.createElement("div");
+    label.textContent = "이 버튼을 누르려면 서버 쪽에서 먼저 설치하세요:";
+    label.style.marginBottom = "4px";
+    const code = document.createElement("code");
+    code.textContent = run.install_hint;
+    const note = document.createElement("div");
+    note.style.marginTop = "4px";
+    note.textContent = "모델 가중치 약 6GB (첫 실행 때 자동 다운로드) · 설치 후 서버를 다시 켜야 합니다";
+    install.append(label, code, note);
+    box.appendChild(install);
+  }
+  return box;
+}
+
+async function loadConditions() {
+  const list = $("condition-list");
+  if (!compareVideoId) {
+    list.innerHTML = "";
+    return;
+  }
+  try {
+    const data = await api(`/api/videos/${compareVideoId}/conditions`);
+    list.innerHTML = "";
+    data.runs.forEach((run) => list.appendChild(conditionCard(run)));
+    renderCompareTable(data.runs);
+  } catch (err) {
+    list.innerHTML = `<p class="empty">${err.message}</p>`;
+  }
+}
+
+// 확정본 9장 "정보원별 기여도" / "처리 시간 분해" 에 그대로 쓰는 표입니다.
+const COMPARE_ROWS = [
+  ["장면 카드", (r) => r.counts?.segments, "more"],
+  ["말이 담긴 카드", (r) => r.counts?.segments_with_asr, "more"],
+  ["자막이 담긴 카드", (r) => r.counts?.segments_with_ocr, "more"],
+  ["장면설명이 담긴 카드", (r) => r.counts?.segments_with_caption, "more"],
+  ["받아적은 구간", (r) => r.counts?.utterances, "more"],
+  ["음성 분석(초)", (r) => r.timings?.transcribe, "less"],
+  ["화면 분석(초)", (r) => r.timings?.frames, "less"],
+  ["좌표 변환(초)", (r) => r.timings?.embedding, "less"],
+  ["총 처리 시간(초)", (r) => r.total_seconds, "less"],
+];
+
+function renderCompareTable(runs) {
+  const done = runs.filter((r) => r.status === "ready");
+  const wrap = $("compare-table-wrap");
+  if (done.length < 1) {
+    wrap.classList.add("hidden");
+    return;
+  }
+  wrap.classList.remove("hidden");
+
+  const table = $("compare-table");
+  table.innerHTML = "";
+  const thead = table.createTHead().insertRow();
+  thead.insertCell().outerHTML = "<th>항목</th>";
+  done.forEach((r) => (thead.insertCell().outerHTML = `<th>${r.label}</th>`));
+
+  const body = table.createTBody();
+  for (const [label, pick, better] of COMPARE_ROWS) {
+    const values = done.map(pick);
+    if (values.every((v) => v === undefined || v === null)) continue;
+
+    const numeric = values.filter((v) => typeof v === "number");
+    let best = null;
+    if (numeric.length > 1 && new Set(numeric).size > 1) {
+      best = better === "more" ? Math.max(...numeric) : Math.min(...numeric);
+    }
+
+    const row = body.insertRow();
+    row.insertCell().textContent = label;
+    values.forEach((value) => {
+      const cell = row.insertCell();
+      cell.textContent = value ?? "-";
+      if (best !== null && value === best) cell.className = "win";
+    });
+  }
+}
+
+async function runCondition(condition) {
+  if (!compareVideoId) return;
+  try {
+    await api(`/api/videos/${compareVideoId}/conditions/${condition}`, { method: "POST" });
+    toast("재분석을 시작했습니다. 로컬 모델은 몇 분 걸립니다.");
+    await loadConditions();
+    startPolling();
+  } catch (err) {
+    toast(`재분석 실패: ${err.message}`, true);
+  }
+}
+
+function compareBlock(result) {
+  const box = document.createElement("div");
+  box.className = "cond-block";
+
+  const title = document.createElement("h5");
+  title.textContent = result.label || result.condition;
+  box.appendChild(title);
+
+  if (!result.available) {
+    const empty = document.createElement("div");
+    empty.className = "card-sub";
+    empty.textContent = "아직 이 조건으로 분석하지 않았습니다.";
+    box.appendChild(empty);
+    return box;
+  }
+
+  const meta = document.createElement("div");
+  meta.className = "cond-backends";
+  const w = result.weights;
+  meta.textContent = `${result.query_type} · 글${w.dense.toFixed(2)}·단어${w.lexical.toFixed(2)}·그림${w.image.toFixed(2)}`;
+  box.appendChild(meta);
+
+  if (!result.scenes.length) {
+    const empty = document.createElement("div");
+    empty.className = "card-sub";
+    empty.textContent = "결과 없음";
+    box.appendChild(empty);
+    return box;
+  }
+  result.scenes.forEach((scene) => box.appendChild(sceneCard(scene)));
+  return box;
+}
+
+async function runCompare() {
+  const query = $("compare-query").value.trim();
+  if (!query || !compareVideoId) return;
+  const results = $("compare-results");
+  const agreement = $("compare-agreement");
+  results.innerHTML = "<p class='empty'>비교 중...</p>";
+  agreement.classList.add("hidden");
+
+  try {
+    const data = await api("/api/compare", {
+      method: "POST",
+      body: JSON.stringify({ video_id: compareVideoId, query, top_k: 3 }),
+    });
+    results.innerHTML = "";
+    data.results.forEach((result) => results.appendChild(compareBlock(result)));
+
+    if (data.agreement) {
+      agreement.className = `agreement ${data.agreement.same ? "same" : "diff"}`;
+      agreement.textContent = data.agreement.same
+        ? `✅ 두 조건이 같은 지점을 가리킵니다 (차이 ${data.agreement.gap_seconds}초)`
+        : `⚠ 두 조건이 다른 지점을 가리킵니다 (차이 ${data.agreement.gap_seconds}초)`;
+      agreement.classList.remove("hidden");
+    }
+  } catch (err) {
+    results.innerHTML = `<p class="empty">비교 실패: ${err.message}</p>`;
+  }
+}
+
 // --- 상세 화면 -------------------------------------------------------------
 
 async function openDetail(videoId) {
@@ -679,12 +923,23 @@ function bindEvents() {
   $("search-input").addEventListener("keydown", (e) => e.key === "Enter" && runSearch());
   $("detail-back").addEventListener("click", () => $("detail").classList.add("hidden"));
 
+  $("compare-video").addEventListener("change", async (e) => {
+    compareVideoId = e.target.value;
+    $("compare-results").innerHTML = "";
+    $("compare-agreement").classList.add("hidden");
+    await loadConditions();
+  });
+  $("compare-run").addEventListener("click", runCompare);
+  $("compare-query").addEventListener("keydown", (e) => e.key === "Enter" && runCompare());
+
   document.querySelectorAll(".tab").forEach((tab) => {
-    tab.addEventListener("click", () => {
+    tab.addEventListener("click", async () => {
       document.querySelectorAll(".tab").forEach((t) => t.classList.remove("active"));
       tab.classList.add("active");
-      $("tab-library").classList.toggle("hidden", tab.dataset.tab !== "library");
-      $("tab-search").classList.toggle("hidden", tab.dataset.tab !== "search");
+      for (const name of ["library", "search", "compare"]) {
+        $(`tab-${name}`).classList.toggle("hidden", tab.dataset.tab !== name);
+      }
+      if (tab.dataset.tab === "compare") await loadCompareVideos();
     });
   });
 

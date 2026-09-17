@@ -1,8 +1,12 @@
 """단계 4 · 음성 받아적기. 담당 C.
 
-두 가지 백엔드를 같은 인터페이스로 갖습니다.
-- whisperx : 진짜. 단어 단위 시각까지 나옵니다. (C 담당 목표)
-- gemini   : demo 대체품. 설치 없이 바로 됩니다.
+세 가지 백엔드를 같은 인터페이스로 갖습니다.
+
+- gemini         : demo 기본값. 설치 없이 바로 됩니다.
+- faster-whisper : 로컬. WhisperX 안에서 실제로 도는 바로 그 엔진(CTranslate2 Whisper)이고
+                   word_timestamps 로 단어 단위 시각도 나옵니다. **Python 3.14 에서도 됩니다.**
+- whisperx       : 로컬. faster-whisper + wav2vec2 강제정렬으로 시각이 더 정확합니다.
+                   ⚠ Python 3.13 이하에서만 설치됩니다(3.14 미지원).
 
 .env 의 ASR_BACKEND 한 줄로 바꿉니다. 나머지 코드는 transcribe() 만 봅니다.
 """
@@ -12,9 +16,10 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-from server.config import ASR_BACKEND, CAPTION_MODEL, COMPUTE_TYPE, DEVICE, WHISPER_MODEL
+from server.config import CAPTION_MODEL, COMPUTE_TYPE, DEVICE, WHISPER_MODEL, backend
 
 _whisper_model = None
+_faster_model = None
 
 
 class Utterance(BaseModel):
@@ -65,6 +70,38 @@ def _transcribe_whisperx(audio: Path) -> list[dict]:
     ]
 
 
+def _transcribe_faster_whisper(audio: Path) -> list[dict]:
+    """WhisperX 안에서 도는 바로 그 엔진. 단어 단위 시각까지 받아옵니다."""
+    global _faster_model
+    from faster_whisper import WhisperModel
+
+    if _faster_model is None:
+        _faster_model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
+
+    segments, _ = _faster_model.transcribe(
+        str(audio), language="ko", word_timestamps=True, vad_filter=True
+    )
+    results: list[dict] = []
+    for seg in segments:
+        text = (seg.text or "").strip()
+        if not text:
+            continue
+        results.append(
+            {
+                "start": float(seg.start),
+                "end": float(seg.end),
+                "text": text,
+                # 단어 단위 시각 — "22초로 이동" 정확도의 기준이 됩니다.
+                "words": [
+                    {"start": float(w.start), "end": float(w.end), "word": w.word.strip()}
+                    for w in (seg.words or [])
+                    if w.start is not None and w.end is not None
+                ],
+            }
+        )
+    return results
+
+
 def _transcribe_gemini(audio: Path) -> list[dict]:
     from google.genai import types
 
@@ -101,6 +138,14 @@ def transcribe(audio: Path) -> list[dict]:
     """오디오 파일 -> [{start, end, text}, ...]"""
     if not audio.is_file() or audio.stat().st_size == 0:
         return []
-    if ASR_BACKEND == "whisperx":
-        return _transcribe_whisperx(audio)
+    name = backend("asr")
+    if name == "whisperx":
+        try:
+            return _transcribe_whisperx(audio)
+        except ImportError:
+            # WhisperX 는 Python 3.14 를 지원하지 않습니다. 같은 엔진으로 대체합니다.
+            print("[transcribe] whisperx 를 못 불러와 faster-whisper 로 대체합니다.")
+            return _transcribe_faster_whisper(audio)
+    if name == "faster-whisper":
+        return _transcribe_faster_whisper(audio)
     return _transcribe_gemini(audio)

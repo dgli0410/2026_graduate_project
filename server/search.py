@@ -106,6 +106,7 @@ def hybrid_search(
     top_n: int = 40,
     video_id: str | None = None,
     video_ids: list[str] | None = None,
+    condition: str | None = None,
 ) -> tuple[list[dict[str, Any]], dict[str, float]]:
     w_dense, w_lexical, w_image = weights_for(query)
 
@@ -116,9 +117,10 @@ def hybrid_search(
         top_n=top_n,
         video_id=video_id,
         video_ids=video_ids,
+        condition=condition,
     )
     image_hits: list[dict[str, Any]] = []
-    if w_image > 0 and vectors.has_image_vector():
+    if w_image > 0 and vectors.has_image_vector(condition):
         image_hits = vectors.search(
             user_id,
             image_embedder.encode_texts([query])[0],
@@ -126,6 +128,7 @@ def hybrid_search(
             top_n=top_n,
             video_id=video_id,
             video_ids=video_ids,
+            condition=condition,
         )
 
     text_scores = dict(
@@ -264,6 +267,7 @@ def search(
     playlist_id: str | None = None,
     top_k: int = 5,
     with_answer: bool = True,
+    condition: str | None = None,
 ) -> dict[str, Any]:
     query = query.strip()
     if not query:
@@ -275,7 +279,12 @@ def search(
 
     intent = detect_intent(query)
     ranked, weights = hybrid_search(
-        user_id, query, top_n=max(top_k * 8, 40), video_id=video_id, video_ids=video_ids
+        user_id,
+        query,
+        top_n=max(top_k * 8, 40),
+        video_id=video_id,
+        video_ids=video_ids,
+        condition=condition,
     )
     # 요약 요청이면 근거 장면을 넉넉히 넘겨줍니다.
     scene_limit = max(top_k, 10) if intent == "summary" else top_k
@@ -294,8 +303,11 @@ def search(
                 f"{str(scene['frame_path']).rsplit('/', 1)[-1]}"
             )
 
+    from server.config import DEFAULT_CONDITION
+
     return {
         "query": query,
+        "condition": condition or DEFAULT_CONDITION,
         "intent": intent,
         "query_type": classify_query(query),
         "weights": weights,

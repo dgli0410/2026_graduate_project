@@ -44,6 +44,22 @@ CREATE TABLE IF NOT EXISTS segments (
 );
 CREATE INDEX IF NOT EXISTS idx_segments_video ON segments(user_id, video_id, start_time);
 
+-- 조건별 재분석 결과. 같은 프레임/오디오를 다른 백엔드로 돌린 기록입니다.
+-- 시연 중에 로컬 모델을 돌리면 3~5분 걸리므로, 미리 돌려둔 결과를 여기서 읽어 씁니다.
+CREATE TABLE IF NOT EXISTS condition_runs (
+    user_id      TEXT NOT NULL,
+    video_id     TEXT NOT NULL,
+    condition    TEXT NOT NULL,
+    status       TEXT NOT NULL DEFAULT 'queued',
+    error        TEXT NOT NULL DEFAULT '',
+    segments_json TEXT NOT NULL DEFAULT '',
+    counts_json  TEXT NOT NULL DEFAULT '',
+    timings_json TEXT NOT NULL DEFAULT '',
+    total_seconds REAL NOT NULL DEFAULT 0,
+    updated_at   REAL NOT NULL,
+    PRIMARY KEY (user_id, video_id, condition)
+);
+
 CREATE TABLE IF NOT EXISTS playlists (
     id         TEXT PRIMARY KEY,
     user_id    TEXT NOT NULL,
@@ -247,6 +263,109 @@ def list_segments(user_id: str, video_id: str) -> list[dict[str, Any]]:
             (user_id, video_id),
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+# --- condition runs (비교 실험) -------------------------------------------
+
+def start_condition_run(user_id: str, video_id: str, condition: str) -> None:
+    with session() as conn:
+        conn.execute(
+            "INSERT INTO condition_runs (user_id, video_id, condition, status, error,"
+            " segments_json, counts_json, timings_json, total_seconds, updated_at)"
+            " VALUES (?,?,?,'queued','','','','',0,?)"
+            " ON CONFLICT(user_id, video_id, condition) DO UPDATE SET"
+            " status='queued', error='', updated_at=excluded.updated_at",
+            (user_id, video_id, condition, time.time()),
+        )
+
+
+def set_condition_status(
+    user_id: str, video_id: str, condition: str, status: str, error: str = ""
+) -> None:
+    with session() as conn:
+        conn.execute(
+            "UPDATE condition_runs SET status=?, error=?, updated_at=?"
+            " WHERE user_id=? AND video_id=? AND condition=?",
+            (status, error, time.time(), user_id, video_id, condition),
+        )
+
+
+def save_condition_result(
+    user_id: str,
+    video_id: str,
+    condition: str,
+    segments: list[dict[str, Any]],
+    counts: dict[str, Any],
+    timings: dict[str, Any],
+    total_seconds: float,
+) -> None:
+    with session() as conn:
+        conn.execute(
+            "UPDATE condition_runs SET status='ready', error='', segments_json=?,"
+            " counts_json=?, timings_json=?, total_seconds=?, updated_at=?"
+            " WHERE user_id=? AND video_id=? AND condition=?",
+            (
+                json.dumps(segments, ensure_ascii=False),
+                json.dumps(counts, ensure_ascii=False),
+                json.dumps(timings, ensure_ascii=False),
+                total_seconds,
+                time.time(),
+                user_id,
+                video_id,
+                condition,
+            ),
+        )
+
+
+def _condition_row_to_dict(row: sqlite3.Row) -> dict[str, Any]:
+    label, progress = STATUS_LABELS.get(row["status"], (row["status"], 0))
+    return {
+        "condition": row["condition"],
+        "status": row["status"],
+        "status_label": label,
+        "progress": progress,
+        "error": row["error"],
+        "counts": json.loads(row["counts_json"]) if row["counts_json"] else {},
+        "timings": json.loads(row["timings_json"]) if row["timings_json"] else {},
+        "total_seconds": row["total_seconds"],
+        "updated_at": row["updated_at"],
+    }
+
+
+def list_condition_runs(user_id: str, video_id: str) -> list[dict[str, Any]]:
+    with session() as conn:
+        rows = conn.execute(
+            "SELECT * FROM condition_runs WHERE user_id=? AND video_id=? ORDER BY condition",
+            (user_id, video_id),
+        ).fetchall()
+    return [_condition_row_to_dict(r) for r in rows]
+
+
+def get_condition_segments(user_id: str, video_id: str, condition: str) -> list[dict[str, Any]]:
+    with session() as conn:
+        row = conn.execute(
+            "SELECT segments_json FROM condition_runs"
+            " WHERE user_id=? AND video_id=? AND condition=?",
+            (user_id, video_id, condition),
+        ).fetchone()
+    return json.loads(row["segments_json"]) if row and row["segments_json"] else []
+
+
+def delete_condition_runs(user_id: str, video_id: str) -> None:
+    with session() as conn:
+        conn.execute(
+            "DELETE FROM condition_runs WHERE user_id=? AND video_id=?", (user_id, video_id)
+        )
+
+
+def pending_condition_runs(user_id: str) -> list[dict[str, str]]:
+    with session() as conn:
+        rows = conn.execute(
+            "SELECT video_id, condition FROM condition_runs"
+            " WHERE user_id=? AND status NOT IN ('ready','failed')",
+            (user_id,),
+        ).fetchall()
+    return [{"video_id": r["video_id"], "condition": r["condition"]} for r in rows]
 
 
 # --- playlists ------------------------------------------------------------

@@ -6,6 +6,8 @@
 from __future__ import annotations
 
 import os
+from contextlib import contextmanager
+from contextvars import ContextVar
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -77,6 +79,131 @@ QDRANT_COLLECTION = os.getenv("QDRANT_COLLECTION", "shorts_segments")
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 MEDIA_DIR.mkdir(parents=True, exist_ok=True)
+
+
+# =========================================================================
+# 조건(condition) — 같은 프레임·오디오에 백엔드만 갈아끼워 비교하기 위한 장치
+# =========================================================================
+# 실험의 기본 원칙: 입력이 같아야 차이가 모델 차이입니다.
+# 캡처된 프레임/오디오는 디스크에 그대로 있으므로, 아래 조건만 바꿔 다시 돌립니다.
+
+CONDITIONS: dict[str, dict] = {
+    "gemini": {
+        "label": "Gemini API",
+        "description": "음성·자막·장면설명·좌표를 모두 Gemini 로 처리합니다.",
+        "backends": {
+            "asr": "gemini",
+            "ocr": "gemini",
+            "text_embed": "gemini",
+            "image_embed": "none",
+        },
+        "requires": [],
+    },
+    "local": {
+        "label": "로컬 모델",
+        "description": "Whisper + EasyOCR + BGE-M3 + SigLIP2. 장면 설명만 Gemini 를 씁니다.",
+        "backends": {
+            # whisperx 가 깔려 있으면 그걸 쓰고, 없으면 같은 엔진인 faster-whisper 로 갑니다.
+            # (WhisperX 는 Python 3.14 를 지원하지 않습니다)
+            "asr": "whisperx",
+            "ocr": "easyocr",
+            "text_embed": "bge",
+            "image_embed": "siglip",
+        },
+        # 각 항목은 "이것들 중 하나만 있으면 됨" 을 뜻합니다.
+        "requires": [
+            ["whisperx", "faster_whisper"],
+            ["easyocr"],
+            ["FlagEmbedding"],
+            ["torch"],
+            ["transformers"],
+            ["peft"],
+        ],
+    },
+}
+DEFAULT_CONDITION = "gemini"
+
+# 조건별 Qdrant collection. 좌표 차원이 달라서 반드시 분리해야 합니다.
+# 기본 조건은 기존 collection 을 그대로 써서 데모 데이터가 유지됩니다.
+_BACKEND_DEFAULTS = {
+    "asr": ASR_BACKEND,
+    "ocr": OCR_BACKEND,
+    "text_embed": TEXT_EMBED_BACKEND,
+    "image_embed": IMAGE_EMBED_BACKEND,
+}
+
+_active_backends: ContextVar[dict[str, str] | None] = ContextVar("active_backends", default=None)
+
+
+def backend(kind: str) -> str:
+    """지금 이 작업이 써야 할 백엔드 이름. 조건 실행 중이면 그 조건 값을 씁니다."""
+    override = _active_backends.get()
+    if override and kind in override:
+        return override[kind]
+    return _BACKEND_DEFAULTS[kind]
+
+
+@contextmanager
+def use_condition(name: str):
+    """이 블록 안에서만 백엔드를 조건에 맞게 바꿉니다.
+
+    ContextVar 이라 스레드/태스크마다 독립적입니다. 두 조건을 동시에 돌려도
+    서로 섞이지 않습니다.
+    """
+    if name not in CONDITIONS:
+        raise ValueError(f"모르는 조건입니다: {name}. {list(CONDITIONS)} 중에서 고르세요.")
+    token = _active_backends.set(dict(CONDITIONS[name]["backends"]))
+    try:
+        yield
+    finally:
+        _active_backends.reset(token)
+
+
+def collection_for(condition: str) -> str:
+    """조건별 Qdrant collection 이름."""
+    if condition == DEFAULT_CONDITION:
+        return QDRANT_COLLECTION  # 데모가 쓰던 것 그대로
+    return f"{QDRANT_COLLECTION}__{condition}"
+
+
+def _installed(package: str) -> bool:
+    import importlib.util
+
+    try:
+        return importlib.util.find_spec(package.replace("-", "_")) is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def condition_info(name: str) -> dict:
+    """조건 하나의 설명 + 필요한 패키지가 깔려 있는지.
+
+    requires 의 각 항목은 대안 목록입니다. 하나만 깔려 있으면 충족으로 봅니다.
+    """
+    import sys
+
+    spec = CONDITIONS[name]
+    missing: list[str] = []
+    for alternatives in spec["requires"]:
+        if any(_installed(package) for package in alternatives):
+            continue
+        recommended = alternatives[0]
+        # WhisperX 는 Python 3.14 이상에서 설치되지 않습니다. 같은 엔진을 권합니다.
+        if recommended == "whisperx" and sys.version_info >= (3, 14):
+            recommended = next((p for p in alternatives if p != "whisperx"), recommended)
+            recommended = recommended.replace("_", "-")
+        missing.append(recommended)
+
+    return {
+        "name": name,
+        "label": spec["label"],
+        "description": spec["description"],
+        "backends": spec["backends"],
+        "ready": not missing,
+        "missing": missing,
+        "install_hint": f"pip install {' '.join(missing)}" if missing else "",
+        "collection": collection_for(name),
+    }
 
 
 def capture_settings() -> dict:

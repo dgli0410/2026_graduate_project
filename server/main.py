@@ -15,16 +15,17 @@ from pydantic import BaseModel, Field
 
 from server import db, embedder, image_embedder, media, search as search_mod, shopping, vectors
 from server.config import (
-    ASR_BACKEND,
     CAPTION_MODEL,
+    CONDITIONS,
+    DEFAULT_CONDITION,
     DEVICE,
-    IMAGE_EMBED_BACKEND,
     MAX_GEMINI_CALLS_PER_VIDEO,
-    OCR_BACKEND,
     SEARCH_TOP_K,
     SEGMENT_SECONDS,
-    TEXT_EMBED_BACKEND,
+    backend,
     capture_settings,
+    condition_info,
+    use_condition,
 )
 from server.pipeline import worker
 
@@ -105,6 +106,13 @@ class PlaylistItemRequest(BaseModel):
     video_id: str
 
 
+class CompareRequest(BaseModel):
+    video_id: str
+    query: str
+    conditions: list[str] | None = None
+    top_k: int = Field(default=3, ge=1, le=10)
+
+
 # --- 상태 -----------------------------------------------------------------
 
 @app.get("/api/health")
@@ -115,10 +123,10 @@ def health() -> dict[str, Any]:
         "reason": reason,
         "device": DEVICE,
         "backends": {
-            "asr": ASR_BACKEND,
-            "ocr": OCR_BACKEND,
-            "text_embed": TEXT_EMBED_BACKEND,
-            "image_embed": IMAGE_EMBED_BACKEND,
+            "asr": backend("asr"),
+            "ocr": backend("ocr"),
+            "text_embed": backend("text_embed"),
+            "image_embed": backend("image_embed"),
             "caption_model": CAPTION_MODEL,
         },
         "capture": capture_settings(),
@@ -218,7 +226,10 @@ def get_videos(
 @app.get("/api/pending")
 def get_pending(user_id: str = Depends(current_user)) -> dict[str, Any]:
     """Side Panel 이 3초마다 부르는 가벼운 상태 확인용."""
-    return {"pending": db.pending_video_ids(user_id)}
+    return {
+        "pending": db.pending_video_ids(user_id),
+        "pending_conditions": db.pending_condition_runs(user_id),
+    }
 
 
 @app.get("/api/videos/{video_id}")
@@ -256,8 +267,10 @@ def remove_video(video_id: str, user_id: str = Depends(current_user)) -> dict[st
     if db.get_video(user_id, video_id) is None:
         raise HTTPException(status_code=404, detail="저장되지 않은 영상입니다.")
     # 표 · 창고 · 이미지 3곳을 모두 지웁니다 (마스터 문서 단계 11, 12장 함정).
-    vectors.delete_video(user_id, video_id)
+    # 창고는 조건별로 나뉘어 있으므로 전부 돌면서 지웁니다.
+    vectors.delete_video_all_conditions(user_id, video_id)
     media.clear(user_id, video_id)
+    db.delete_condition_runs(user_id, video_id)
     db.delete_video(user_id, video_id)
     return {"deleted": True, "video_id": video_id}
 
@@ -315,6 +328,139 @@ def shopping_search(query: str = "", user_id: str = Depends(current_user)) -> di
     except Exception as exc:  # noqa: BLE001 - 외부 API 실패가 화면을 깨면 안 됩니다
         raise HTTPException(status_code=502, detail=f"네이버쇼핑 API 오류: {exc}") from exc
     return {"query": query, "items": items}
+
+
+# --- 비교 실험 -------------------------------------------------------------
+# 같은 프레임·오디오를 다른 백엔드로 다시 돌려 나란히 봅니다.
+# 보관함/검색 탭이 쓰는 기본 조건 데이터는 건드리지 않습니다.
+
+@app.get("/api/conditions")
+def get_conditions() -> dict[str, Any]:
+    return {
+        "default": DEFAULT_CONDITION,
+        "conditions": [condition_info(name) for name in CONDITIONS],
+    }
+
+
+def _backfill_default_run(user_id: str, video: dict[str, Any]) -> None:
+    """비교 기능을 만들기 전에 분석된 영상도 비교표에 나오도록 기록을 채웁니다."""
+    video_id = video["video_id"]
+    if video["status"] != "ready":
+        return
+    if any(
+        run["condition"] == DEFAULT_CONDITION and run["status"] == "ready"
+        for run in db.list_condition_runs(user_id, video_id)
+    ):
+        return
+
+    segments = db.list_segments(user_id, video_id)
+    if not segments:
+        return
+    summary = video.get("summary") or {}
+    counts = summary.get("counts") or {
+        "segments": len(segments),
+        "segments_with_asr": sum(1 for s in segments if s.get("asr_text")),
+        "segments_with_ocr": sum(1 for s in segments if s.get("ocr_text")),
+        "segments_with_caption": sum(1 for s in segments if s.get("caption")),
+        "frames": len(media.list_frames(user_id, video_id)),
+    }
+    db.start_condition_run(user_id, video_id, DEFAULT_CONDITION)
+    db.save_condition_result(
+        user_id,
+        video_id,
+        DEFAULT_CONDITION,
+        segments,
+        counts,
+        summary.get("timings") or {},
+        summary.get("total_seconds") or 0.0,
+    )
+
+
+@app.get("/api/videos/{video_id}/conditions")
+def get_video_conditions(video_id: str, user_id: str = Depends(current_user)) -> dict[str, Any]:
+    video = db.get_video(user_id, video_id)
+    if video is None:
+        raise HTTPException(status_code=404, detail="저장되지 않은 영상입니다.")
+    _backfill_default_run(user_id, video)
+    runs = {run["condition"]: run for run in db.list_condition_runs(user_id, video_id)}
+    return {
+        "video_id": video_id,
+        "runs": [
+            {**condition_info(name), **runs.get(name, {"status": "none", "status_label": "안 돌림"})}
+            for name in CONDITIONS
+        ],
+    }
+
+
+@app.post("/api/videos/{video_id}/conditions/{condition}")
+def run_condition(
+    video_id: str, condition: str, user_id: str = Depends(current_user)
+) -> dict[str, Any]:
+    """같은 프레임·오디오를 그 조건으로 재분석합니다. 원본은 그대로 둡니다."""
+    if condition not in CONDITIONS:
+        raise HTTPException(status_code=400, detail=f"모르는 조건입니다: {condition}")
+    if db.get_video(user_id, video_id) is None:
+        raise HTTPException(status_code=404, detail="저장되지 않은 영상입니다.")
+    if not media.list_frames(user_id, video_id):
+        raise HTTPException(status_code=400, detail="저장된 프레임이 없어 재분석할 수 없습니다.")
+
+    info = condition_info(condition)
+    if not info["ready"]:
+        raise HTTPException(
+            status_code=503,
+            detail=f"필요한 패키지가 없습니다. {info['install_hint']}",
+        )
+
+    db.start_condition_run(user_id, video_id, condition)
+    worker.enqueue_condition(user_id, video_id, condition)
+    return {"queued": True, "video_id": video_id, "condition": condition}
+
+
+@app.get("/api/videos/{video_id}/conditions/{condition}/segments")
+def get_condition_segments(
+    video_id: str, condition: str, user_id: str = Depends(current_user)
+) -> dict[str, Any]:
+    segments = db.get_condition_segments(user_id, video_id, condition)
+    for segment in segments:
+        name = str(segment.get("frame_path", "")).rsplit("/", 1)[-1]
+        if name:
+            segment["frame_url"] = f"/api/videos/{video_id}/frames/{name}"
+    return {"video_id": video_id, "condition": condition, "segments": segments}
+
+
+@app.post("/api/compare")
+def compare(req: CompareRequest, user_id: str = Depends(current_user)) -> dict[str, Any]:
+    """한 질문을 여러 조건으로 동시에 검색해 나란히 돌려줍니다."""
+    if db.get_video(user_id, req.video_id) is None:
+        raise HTTPException(status_code=404, detail="저장되지 않은 영상입니다.")
+    names = req.conditions or list(CONDITIONS)
+
+    results = []
+    for name in names:
+        if name not in CONDITIONS:
+            continue
+        if not vectors.collection_exists(name):
+            results.append({"condition": name, "available": False, "scenes": []})
+            continue
+        with use_condition(name):
+            # 답변 생성은 조건 비교와 무관하므로 끕니다(Gemini 호출 절약 + 공정성).
+            found = search_mod.search(
+                user_id,
+                req.query,
+                video_id=req.video_id,
+                top_k=req.top_k,
+                with_answer=False,
+                condition=name,
+            )
+        results.append({**found, "available": True, "label": CONDITIONS[name]["label"]})
+
+    # 두 조건이 같은 지점을 가리키는지 (초 단위)
+    tops = [r["scenes"][0]["start_time"] for r in results if r.get("scenes")]
+    agreement = None
+    if len(tops) >= 2:
+        agreement = {"gap_seconds": round(abs(tops[0] - tops[1]), 1), "same": abs(tops[0] - tops[1]) < 4.0}
+
+    return {"query": req.query, "video_id": req.video_id, "results": results, "agreement": agreement}
 
 
 # --- 단계 12 · 검색 --------------------------------------------------------

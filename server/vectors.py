@@ -21,10 +21,20 @@ import numpy as np
 from qdrant_client import QdrantClient, models
 
 from server import embedder, image_embedder
-from server.config import QDRANT_API_KEY, QDRANT_COLLECTION, QDRANT_PATH, QDRANT_URL
+from server.config import (
+    DEFAULT_CONDITION,
+    QDRANT_API_KEY,
+    QDRANT_PATH,
+    QDRANT_URL,
+    collection_for,
+)
 
 TEXT_VECTOR = "text"
 IMAGE_VECTOR = "image"
+
+
+def _collection(condition: str | None) -> str:
+    return collection_for(condition or DEFAULT_CONDITION)
 
 
 @lru_cache(maxsize=1)
@@ -35,10 +45,12 @@ def get_client() -> QdrantClient:
     return QdrantClient(path=str(QDRANT_PATH))
 
 
-def ensure_collection() -> None:
+def ensure_collection(condition: str | None = None) -> str:
+    """조건별 collection 을 만듭니다. 좌표 차원이 달라서 조건마다 분리합니다."""
+    name = _collection(condition)
     client = get_client()
-    if client.collection_exists(QDRANT_COLLECTION):
-        return
+    if client.collection_exists(name):
+        return name
     config = {
         TEXT_VECTOR: models.VectorParams(size=embedder.dim(), distance=models.Distance.COSINE)
     }
@@ -46,21 +58,28 @@ def ensure_collection() -> None:
         config[IMAGE_VECTOR] = models.VectorParams(
             size=image_embedder.dim(), distance=models.Distance.COSINE
         )
-    client.create_collection(collection_name=QDRANT_COLLECTION, vectors_config=config)
+    client.create_collection(collection_name=name, vectors_config=config)
     if QDRANT_URL:
         # payload index 는 서버 모드에서만 의미가 있습니다(로컬 모드는 경고만 냅니다).
         for field in ("user_id", "video_id"):
             client.create_payload_index(
-                collection_name=QDRANT_COLLECTION,
+                collection_name=name,
                 field_name=field,
                 field_schema=models.PayloadSchemaType.KEYWORD,
             )
+    return name
 
 
-def has_image_vector() -> bool:
-    """지금 collection 이 그림 좌표를 갖고 있는지."""
-    ensure_collection()
-    info = get_client().get_collection(QDRANT_COLLECTION)
+def collection_exists(condition: str | None = None) -> bool:
+    return get_client().collection_exists(_collection(condition))
+
+
+def has_image_vector(condition: str | None = None) -> bool:
+    """그 조건의 collection 이 그림 좌표를 갖고 있는지."""
+    name = _collection(condition)
+    if not get_client().collection_exists(name):
+        return False
+    info = get_client().get_collection(name)
     vectors_config = info.config.params.vectors
     return isinstance(vectors_config, dict) and IMAGE_VECTOR in vectors_config
 
@@ -89,8 +108,9 @@ def upsert_segments(
     segments: list[dict[str, Any]],
     text_vectors: np.ndarray,
     image_vectors: np.ndarray | None = None,
+    condition: str | None = None,
 ) -> None:
-    ensure_collection()
+    name = ensure_collection(condition)
     use_image = image_vectors is not None and len(image_vectors) == len(segments)
 
     points = []
@@ -119,7 +139,7 @@ def upsert_segments(
             )
         )
     if points:
-        get_client().upsert(collection_name=QDRANT_COLLECTION, points=points)
+        get_client().upsert(collection_name=name, points=points)
 
 
 def search(
@@ -129,12 +149,13 @@ def search(
     top_n: int = 40,
     video_id: str | None = None,
     video_ids: list[str] | None = None,
+    condition: str | None = None,
 ) -> list[dict[str, Any]]:
-    ensure_collection()
+    name = ensure_collection(condition)
     if video_ids is not None and not video_ids:
         return []  # 빈 재생목록: 찾을 대상이 없습니다.
     hits = get_client().query_points(
-        collection_name=QDRANT_COLLECTION,
+        collection_name=name,
         query=np.asarray(query_vector, dtype=np.float32).tolist(),
         using=using,
         query_filter=_user_filter(user_id, video_id, video_ids),
@@ -144,10 +165,21 @@ def search(
     return [{"score": float(h.score), **dict(h.payload or {})} for h in hits]
 
 
-def delete_video(user_id: str, video_id: str) -> None:
+def delete_video(user_id: str, video_id: str, condition: str | None = None) -> None:
     """마스터 문서 단계 11: 표·창고·이미지 3곳 중 '창고' 담당."""
-    ensure_collection()
-    get_client().delete(
-        collection_name=QDRANT_COLLECTION,
+    name = _collection(condition)
+    client = get_client()
+    if not client.collection_exists(name):
+        return
+    client.delete(
+        collection_name=name,
         points_selector=models.FilterSelector(filter=_user_filter(user_id, video_id)),
     )
+
+
+def delete_video_all_conditions(user_id: str, video_id: str) -> None:
+    """영상을 지울 때는 모든 조건의 창고에서 지워야 합니다."""
+    from server.config import CONDITIONS
+
+    for condition in CONDITIONS:
+        delete_video(user_id, video_id, condition)
