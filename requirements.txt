@@ -8,8 +8,11 @@ Pillow
 python-dotenv
 
 # --- 진짜 모델로 갈아끼울 때만 (담당자별) --------------------------------
-# C · WhisperX  (ASR_BACKEND=whisperx)
+# C · WhisperX  (ASR_BACKEND=whisperx)  — Python 3.13 이하에서만 설치됩니다
 # whisperx
+# C · faster-whisper (ASR_BACKEND=faster-whisper) — 3.14 에서는 이걸 쓰세요.
+#     WhisperX 내부 엔진과 같고, Gemini 할당량을 안 씁니다.
+# faster-whisper
 # C · OCR       (OCR_BACKEND=easyocr)
 # easyocr
 # D · BGE-M3    (TEXT_EMBED_BACKEND=bge)
@@ -19,3 +22,7 @@ python-dotenv
 # transformers>=4.45
 # peft>=0.12
 # accelerate
+
+# --- 도구용 (필요할 때만) -------------------------------------------------
+# 평가셋 라벨링 시트 생성 (tools/make_labeling_sheet.py)
+# openpyxl
