@@ -43,6 +43,15 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 
 ---
 
+## 0. 문서
+
+| 문서 | 내용 |
+| --- | --- |
+| [`docs/MENTOR_BRIEF.md`](docs/MENTOR_BRIEF.md) | 프로젝트 총정리 — 계획·구현·실험·실측치 |
+| [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기** |
+| [`docs/search-logic.md`](docs/search-logic.md) | 검색 로직의 실제 동작과 고쳐야 할 지점 |
+| [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
+
 ## 1. 실행 방법
 
 ### 서버
@@ -247,6 +256,10 @@ faster-whisper 로 넘어갑니다.** 팀원마다 파이썬 버전이 달라도
 ## 7. 하이브리드 검색 — 실험할 지점
 
 `server/search.py` 의 `WEIGHTS` 가 마스터 문서 단계 12 의 비중 표입니다.
+**⚠ 아래 표의 숫자가 그대로 적용되지 않습니다** — 기본 설정(`IMAGE_EMBED_BACKEND=none`)에서는
+그림 좌표 몫이 나머지 둘에 재배분되어 세 번째 칸이 항상 0 이 됩니다.
+실제 적용값과 그 부작용은 [`docs/search-logic.md`](docs/search-logic.md) 3장을 보세요.
+
 
 ```python
 WEIGHTS = {
