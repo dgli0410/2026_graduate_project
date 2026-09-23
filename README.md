@@ -50,6 +50,8 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 | [`docs/MENTOR_BRIEF.md`](docs/MENTOR_BRIEF.md) | 프로젝트 총정리 — 계획·구현·실험·실측치 |
 | [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기** |
 | [`docs/search-logic.md`](docs/search-logic.md) | 검색 로직의 실제 동작과 고쳐야 할 지점 |
+| [`docs/eval-guide.md`](docs/eval-guide.md) | **질문셋·평가셋 만드는 법** (질문 작성자·라벨러용 작업 지침) |
+| [`docs/team-meeting.md`](docs/team-meeting.md) | 팀 회의 자료 — 진행 현황과 결정할 것 |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
 
 ## 1. 실행 방법

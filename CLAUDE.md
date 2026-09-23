@@ -8,6 +8,7 @@
 - `docs/MENTOR_BRIEF.md` — 왜 이렇게 설계했는지, Gemini vs 로컬 비교 결과
 - `docs/mentor-feedback.md` — 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기**
 - `docs/search-logic.md` — 검색 코드가 실제로 어떻게 도는지 + 고쳐야 할 지점
+- `docs/eval-guide.md` — 질문셋·평가셋 만드는 법. 평가 작업을 도울 때 기준이 되는 문서
 - `server/config.py` — 모든 설정과 조건(condition) 정의가 여기 한 곳
 
 ## 환경
@@ -53,4 +54,5 @@ python -m tools.run_condition --list  # 조건·영상 목록
 - 음성은 로컬 faster-whisper 가 기본. 저장된 영상 5개(ready 4 / failed 1)
 - **다음 할 일은 9/18 멘토 자문 기준으로 재정렬했습니다 → `docs/mentor-feedback.md` 6장**
   1순위는 평가셋과 평가 스크립트입니다. 이게 없으면 검색을 고쳐도 좋아졌다고 말할 근거가 없습니다
+- 저장된 영상 16개(장면 카드 150개). 목록은 `eval/video_list.md`
 - 평가셋 라벨링 시트: `eval/labeling_sheet.xlsx` (`python -m tools.make_labeling_sheet --force` 로 갱신)
