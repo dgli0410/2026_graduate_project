@@ -1,8 +1,11 @@
 # 팀 회의 자료 — 멘토 자문 반영 현황과 결정할 것
 
-> 2026-09-24 · 작성: 이동현
+> 2026-09-24 작성 · 2026-09-27 갱신 · 이동현
 >
 > **회의에서 결정할 것 4가지**가 6장에 있습니다. 시간 없으면 **1장과 6장만** 보셔도 됩니다.
+>
+> - 어떤 문서가 무엇인지 → **8장**
+> - 서버·확장 실행법, 영상 추가 후 갱신법 → **9장**
 
 ---
 
@@ -52,7 +55,8 @@
 | --- | --- |
 | [`../eval/labeling_sheet.xlsx`](../eval/labeling_sheet.xlsx) | 라벨링 시트. 작성법/라벨링/영상목록/진행현황 4탭. 드롭다운·자동 집계 포함 |
 | [`eval-guide.md`](eval-guide.md) | 질문·라벨링 작업 지침. **실제 저장된 영상 내용으로 유형별 예시** |
-| `tools/make_labeling_sheet.py` | 시트 생성기. 영상 추가 후 `--force` 로 갱신 |
+| `tools/make_labeling_sheet.py` | 시트 생성기. 영상 추가 후 갱신 (⚠ `--force` 는 입력한 라벨을 지웁니다 — 9-4장) |
+| `tools/make_video_list.py` | 영상 목록 표 생성기. 캡처가 끊긴 영상을 자동으로 질문 대상에서 제외 |
 
 멘토 지시를 그대로 반영했습니다 — 등급형 라벨(정확 2 / 관련 1 / 무관 0), 질문 유형 3분류,
 2인 독립 라벨링, 비대칭 허용 오차(이전 5초·이후 2초), 정답을 **시간(초)** 으로 기록.
@@ -182,3 +186,148 @@ Windows 보안 → 앱 및 브라우저 제어 → 스마트 앱 제어 설정.
 
 **코드 문제가 아니라 문서 누락으로 깎인 항목**이라, 표 두 개만 만들면 회복됩니다.
 회의에서 각자 맡은 부분과 실제 진행 날짜를 정리해주시면 제가 문서로 만들겠습니다.
+
+---
+
+## 8. 문서 안내 — 어느 문서를 언제 보나
+
+저장소에 문서가 여러 개라 헷갈리기 쉽습니다. **본인 할 일에 맞는 것만** 보시면 됩니다.
+
+| 파일 | 무엇인가 | 누가 언제 | 분량 |
+| --- | --- | --- | --- |
+| [`README.md`](../README.md) | 프로젝트 전체 설명 — 설치·실행법, 코드 구조와 담당 경계, 확인 도구 | **처음 받았을 때 전원** | 297줄 |
+| [`eval-guide.md`](eval-guide.md) | **질문 만드는 법 · 정답 라벨링하는 법.** 유형별 예시가 실제 저장된 영상 내용 | **질문 작성자 · 라벨러** ★ | 294줄 |
+| [`../eval/video_list.md`](../eval/video_list.md) | 저장된 영상 16개 목록. 쇼츠·라벨링 링크 둘 다 | 노션에 붙여넣을 때, 담당 정할 때 | 38줄 |
+| [`team-meeting.md`](team-meeting.md) | **이 문서.** 진행 현황과 회의에서 결정할 것 | 회의 전 전원 | — |
+| [`mentor-feedback.md`](mentor-feedback.md) | 9/18 멘토 자문 원문 정리 + 항목별 실행 계획 | **"왜 이걸 먼저 하지?"가 궁금할 때** | 187줄 |
+| [`MENTOR_BRIEF.md`](MENTOR_BRIEF.md) | 프로젝트 총정리 — 계획·구현·실험·실측치. 가장 상세 | 멘토·심사 대응, 보고서 쓸 때 | 385줄 |
+| [`search-logic.md`](search-logic.md) | 검색 코드가 **실제로** 어떻게 도는가 + 고쳐야 할 12곳 | **검색 담당(D)**, 개선 작업할 때 | 295줄 |
+| [`../CLAUDE.md`](../CLAUDE.md) | Claude Code 작업 지침 — 환경 주의사항, 설계 원칙, 검증 명령 | AI로 작업할 때 자동으로 읽힘 | 58줄 |
+
+**md 는 아니지만 같이 쓰는 것**
+
+| 파일 | 무엇인가 |
+| --- | --- |
+| [`../eval/labeling_sheet.xlsx`](../eval/labeling_sheet.xlsx) | 라벨링 입력 시트. 작성법/라벨링/영상목록/진행현황 4탭 |
+
+### 읽는 순서 추천
+
+- **질문 작성자(외부인)** — 아무것도 안 읽어도 됩니다. `video_list.md` 의 쇼츠 링크만 보내주고
+  "다시 볼 때 찾고 싶은 장면을 질문 5개로" 라고 부탁하면 됩니다.
+- **라벨러** — `eval-guide.md` 3장만. 그리고 시트의 [작성법] 탭.
+- **회의 참석자** — 이 문서 1장·6장.
+- **검색 개선 담당** — `search-logic.md` → `mentor-feedback.md`.
+- **보고서 쓰는 사람** — `MENTOR_BRIEF.md` 전체.
+
+### 문서끼리 어긋나면
+
+`MENTOR_BRIEF.md` 4장과 `search-logic.md` 가 같은 주제(검색)를 다룹니다.
+앞은 **설계 의도**, 뒤는 **현행 동작**입니다. 어긋나 보이면 **`search-logic.md` 가 코드 기준**입니다.
+
+---
+
+## 9. 실행 방법
+
+### 9-1. 처음 받았을 때 (설치)
+
+```powershell
+git clone https://github.com/dgli0410/2026_graduate_project.git
+cd 2026_graduate_project
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+copy .env.example .env
+notepad .env        # GEMINI_API_KEY 에 본인 키 입력 (무료: https://aistudio.google.com/apikey)
+```
+
+로컬 음성인식을 쓰려면 하나 더 (권장 — Gemini 할당량을 크게 아낍니다):
+```powershell
+.venv\Scripts\python.exe -m pip install faster-whisper
+```
+
+> **`.venv\Scripts\activate` 가 막히면** — 윈도우 기본 정책이 스크립트 실행을 막는 것입니다.
+> `activate` 를 건너뛰고 위처럼 `.venv\Scripts\python.exe` 를 직접 부르면 그대로 됩니다.
+> 매번 치기 번거로우면: `Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned`
+
+> **`data/` 와 `.env` 는 저장소에 없습니다.** `git pull` 해도 **저장된 영상은 안 넘어옵니다.**
+> 새 컴퓨터에서는 확장으로 쇼츠를 새로 저장해야 데이터가 생깁니다(6장 결정 사항 ④와 연결).
+
+### 9-2. 서버 띄우기
+
+```powershell
+.venv\Scripts\python.exe -m uvicorn server.main:app --port 8000
+```
+
+- **`--reload` 를 붙이지 마세요.** 로컬 Qdrant 는 프로세스 하나만 붙을 수 있는데 서버가 두 번 뜹니다.
+- 확인: `http://localhost:8000/api/health` — `"asr": "faster-whisper"`, `"max_gemini_calls_per_video": 1` 이면 정상
+- `.env` 를 고쳤으면 **서버를 껐다 켜야** 반영됩니다
+
+### 9-3. 크롬 확장 실행
+
+1. `chrome://extensions` → 오른쪽 위 **개발자 모드** 켜기
+2. **「압축해제된 확장 프로그램을 로드」** → 저장소의 `extension` 폴더 선택
+3. 주소창 오른쪽 퍼즐 아이콘 → 「쇼츠 AI 보관함」 **📌 핀 고정**
+4. 유튜브 쇼츠를 열고 확장 아이콘 클릭 → 오른쪽에 Side Panel
+5. **「이 쇼츠 저장」**
+
+#### ⚠ 저장 전에 꺼야 하는 확장
+
+저장 기능은 영상을 **실제로 재생하면서** 화면을 캔버스로 긁고 오디오를 실시간 녹음합니다.
+영상에 간섭하는 확장이 있으면 캡처가 깨집니다.
+
+| 확장 | 왜 |
+| --- | --- |
+| **동영상 배속 재생기** 류 | `playbackRate` 를 바꿔 프레임 시각과 오디오 타임라인이 어긋납니다. **가장 치명적** |
+| **Picture in Picture (PiP)** | `video` 요소를 떼어내 화면 캡처가 실패합니다 |
+| 기타 유튜브 확장 | DOM 충돌. 원인 불명 버그의 단골입니다 |
+
+개발 전용 크롬 프로필을 따로 만드는 걸 권합니다.
+
+#### ⚠ 저장 중 주의
+
+| | |
+| --- | --- |
+| **시간** | 실시간 재생이라 60초 영상이면 저장에 60초 |
+| **탭 유지** | 그 탭을 **앞에 둔 채로** 두세요. 백그라운드로 가면 크롬이 타이머를 늦춰 프레임이 빠집니다 |
+| **소리** | 음소거하면 음성 인식이 빈 결과가 됩니다 |
+| **길이** | **60초 넘는 영상은 피하세요.** 실제로 119초 영상 하나가 78.5초에서 끊겨 질문 대상에서 뺐습니다 |
+| **할당량** | Gemini 무료 티어는 모델당 하루 20회. 현재 설정으로 영상 1개 = 1회 (하루 20개) |
+
+저장이 끝나면 카드에 요약 한 줄이 붙고 진행률이 100% 가 됩니다.
+
+### 9-4. 영상을 더 저장한 뒤 갱신
+
+저장하면 색인은 **자동으로** 됩니다. 손으로 갱신할 것은 목록 문서 두 개뿐입니다.
+
+```powershell
+.venv\Scripts\python.exe -m tools.make_video_list
+```
+→ [`../eval/video_list.md`](../eval/video_list.md) 갱신. 캡처가 끊긴 영상(커버율 85% 미만)은
+질문 대상에서 자동으로 빠지고 사유가 적힙니다.
+
+```powershell
+.venv\Scripts\python.exe -m tools.make_labeling_sheet --force
+```
+→ 시트의 [영상목록] 탭과 `video_id` 드롭다운 갱신.
+
+> 🚨 **`--force` 는 시트를 통째로 새로 만듭니다. 라벨링을 이미 시작했다면 입력한 내용이
+> 전부 날아갑니다.** 라벨링 시작 후에 영상을 추가했다면, 이 명령 대신 시트의 [영상목록] 탭에
+> 손으로 한 줄 추가하세요.
+
+### 9-5. 그 밖의 도구
+
+```powershell
+.venv\Scripts\python.exe -m tools.smoke_test          # Gemini 없이 되는 부분 점검
+.venv\Scripts\python.exe -m tools.check_gemini        # API 키·모델 연동 확인
+.venv\Scripts\python.exe -m tools.test_user_isolation # 남의 영상이 내 검색에 안 나오는지
+.venv\Scripts\python.exe -m tools.e2e_test            # 서버 전 구간 (서버 켜둔 채로)
+```
+
+**`tools.reembed`** 는 **임베딩 모델을 바꿨을 때만** 씁니다. 영상을 추가했다고 돌릴 필요는
+없습니다(저장할 때 이미 색인됩니다). 모델을 바꾸면 벡터 공간이 달라져 예전 좌표와 새 검색어
+좌표를 비교할 수 없게 되므로, 저장된 장면 전부를 다시 색인해야 합니다.
+
+```powershell
+.venv\Scripts\python.exe -m tools.reembed              # 계획만 (API 호출 0회)
+.venv\Scripts\python.exe -m tools.reembed --yes        # 실제 실행 (서버 끈 상태에서)
+```
