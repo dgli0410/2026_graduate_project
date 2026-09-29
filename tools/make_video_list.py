@@ -20,6 +20,18 @@ from server.config import DB_PATH, MEDIA_DIR, ROOT
 
 MIN_COVERAGE = 85.0  # 캡처 커버율(%)이 이보다 낮으면 질문 대상에서 제외
 
+# 번호를 고정하기 위한 예약 자리.
+# 노션·시트에 이미 번호로 담당을 적어두었는데 중간 영상이 빠지면 뒤 번호가 전부 당겨져
+# 어긋납니다. 빠진 자리를 빈 줄로 남겨 번호를 유지합니다.
+#
+# 새 영상을 저장한 뒤 그 video_id 를 "replacement" 에 적으면 그 자리로 들어갑니다.
+RESERVED: dict[int, dict[str, str]] = {
+    5: {
+        "replacement": "",  # <- 교체할 새 영상의 video_id 를 여기에 넣으세요
+        "note": "uncSsiLbz1E 가 유튜브에서 삭제됨(2026-09-29 확인). 새 영상으로 교체 예정",
+    },
+}
+
 
 def coverage(user_id: str, video_id: str, duration: float) -> float:
     """마지막 프레임 시각 / 영상 길이. 저장 도중 끊겼는지 봅니다."""
@@ -63,9 +75,31 @@ def main() -> int:
         "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
 
+    # 예약 자리에 들어갈 영상은 순서에서 빼두었다가 그 자리에 놓습니다.
+    taken = {r["replacement"] for r in RESERVED.values() if r["replacement"]}
+    by_id = {v["video_id"]: v for v in videos}
+    queue = [v for v in videos if v["video_id"] not in taken]
+
+    slots: list[sqlite3.Row | None] = []
+    while queue or len(slots) < max(RESERVED, default=0):
+        spot = len(slots) + 1
+        if spot in RESERVED:
+            slots.append(by_id.get(RESERVED[spot]["replacement"]))
+        elif queue:
+            slots.append(queue.pop(0))
+        else:
+            slots.append(None)
+
     excluded: list[tuple[str, str]] = []
     total_segments = 0
-    for index, video in enumerate(videos, start=1):
+    for index, video in enumerate(slots, start=1):
+        if video is None:
+            note = RESERVED.get(index, {}).get("note", "비어 있음")
+            lines.append(
+                f"| {index} | *(비어 있음 — 교체 예정)* | — | — | — | — | — |  |  |  |"
+            )
+            excluded.append((f"{index}번 자리", note))
+            continue
         vid = video["video_id"]
         segments = conn.execute(
             "SELECT COUNT(*) FROM segments WHERE user_id=? AND video_id=?",
@@ -97,18 +131,19 @@ def main() -> int:
     lines += [
         "",
         f"**합계: 영상 {len(videos)}개 · 장면 카드 {total_segments}개"
-        f" · 질문 대상 {len(videos) - len(excluded)}개**",
+        f" · 질문 대상 {sum(1 for v in slots if v is not None) - sum(1 for k, _ in excluded if not k.endswith('번 자리'))}개**",
     ]
 
     if excluded:
-        lines += ["", "## 질문 대상에서 제외한 영상", "", "| video_id | 사유 |", "| --- | --- |"]
+        lines += ["", "## 질문 대상에서 제외 / 비어 있는 자리", "", "| 대상 | 사유 |", "| --- | --- |"]
         lines += [f"| {vid} | {why} |" for vid, why in excluded]
 
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print(f"만들었습니다: {out}")
-    print(f"영상 {len(videos)}개 (질문 대상 {len(videos) - len(excluded)}개) · 장면 {total_segments}개")
+    empty = sum(1 for v in slots if v is None)
+    print(f"영상 {len(videos)}개 · 장면 {total_segments}개 · 빈 자리 {empty}개")
     return 0
 
 

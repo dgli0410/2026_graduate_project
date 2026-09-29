@@ -54,5 +54,5 @@ python -m tools.run_condition --list  # 조건·영상 목록
 - 음성은 로컬 faster-whisper 가 기본. 저장된 영상 5개(ready 4 / failed 1)
 - **다음 할 일은 9/18 멘토 자문 기준으로 재정렬했습니다 → `docs/mentor-feedback.md` 6장**
   1순위는 평가셋과 평가 스크립트입니다. 이게 없으면 검색을 고쳐도 좋아졌다고 말할 근거가 없습니다
-- 저장된 영상 16개(장면 카드 150개). 목록은 `eval/video_list.md`
+- 저장된 영상 15개(장면 카드 143개). 목록은 `eval/video_list.md` (5번 자리는 교체 예정으로 비어 있음)
 - 평가셋 라벨링 시트: `eval/labeling_sheet.xlsx` (`python -m tools.make_labeling_sheet --force` 로 갱신)

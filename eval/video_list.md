@@ -1,6 +1,6 @@
 # 저장 완료 영상 목록 (평가셋 대상)
 
-> 노션에 그대로 붙여넣으면 표로 들어갑니다. 2026-09-27 기준 · 총 16개
+> 노션에 그대로 붙여넣으면 표로 들어갑니다. 2026-09-29 기준 · 총 15개
 >
 > **링크가 두 개인 이유** — 용도가 다릅니다.
 > - **쇼츠**: 영상을 보거나 확장으로 저장할 때. 클릭하면 바로 쇼츠 플레이어입니다.
@@ -16,7 +16,7 @@
 | 2 | 라면 보다 쉬운 파스타 만들기 | [쇼츠](https://www.youtube.com/shorts/sfPYotqyD18) | [sfPYotqyD18](https://www.youtube.com/watch?v=sfPYotqyD18) | 15초 | 4 | O |  |  |  |
 | 3 | 일본 남자들의 소울푸드 | [쇼츠](https://www.youtube.com/shorts/Z7z0wW62obE) | [Z7z0wW62obE](https://www.youtube.com/watch?v=Z7z0wW62obE) | 54초 | 14 | O |  |  |  |
 | 4 | 절대 모르면 안되는 알배추 레시피 | [쇼츠](https://www.youtube.com/shorts/Rjfzpzj3bug) | [Rjfzpzj3bug](https://www.youtube.com/watch?v=Rjfzpzj3bug) | 20초 | 5 | O |  |  |  |
-| 5 | 요리 레시피 쇼츠 | [쇼츠](https://www.youtube.com/shorts/uncSsiLbz1E) | [uncSsiLbz1E](https://www.youtube.com/watch?v=uncSsiLbz1E) | 29초 | 7 | O |  |  |  |
+| 5 | *(비어 있음 — 교체 예정)* | — | — | — | — | — |  |  |  |
 | 6 | 도파민 터지는 참치비빔칼국수 | [쇼츠](https://www.youtube.com/shorts/z8QPN-ITUvI) | [z8QPN-ITUvI](https://www.youtube.com/watch?v=z8QPN-ITUvI) | 30초 | 7 | O |  |  |  |
 | 7 | 사리곰탕 파스타 #shorts #쇼츠 #사리곰탕면 #사리곰탕 #자취요리 #쉬운요리  | [쇼츠](https://www.youtube.com/shorts/igP4-Rq5zgM) | [igP4-Rq5zgM](https://www.youtube.com/watch?v=igP4-Rq5zgM) | 16초 | 4 | O |  |  |  |
 | 8 | 성시경이 감탄한 1등 레시피 미친 조합! #성시경 #라면레시피 #쇼츠 | [쇼츠](https://www.youtube.com/shorts/Zlo2JQzihwc) | [Zlo2JQzihwc](https://www.youtube.com/watch?v=Zlo2JQzihwc) | 119초 | 19 | X |  |  |  |
@@ -29,10 +29,11 @@
 | 15 | [⭐️490만⭐️] 초간단 4분 잔치국수 뚝딱! #shorts | [쇼츠](https://www.youtube.com/shorts/11C8XqWobjQ) | [11C8XqWobjQ](https://www.youtube.com/watch?v=11C8XqWobjQ) | 40초 | 10 | O |  |  |  |
 | 16 | 지코바는 사 먹지 마세요! | [쇼츠](https://www.youtube.com/shorts/iDMyw61V1XM) | [iDMyw61V1XM](https://www.youtube.com/watch?v=iDMyw61V1XM) | 55초 | 14 | O |  |  |  |
 
-**합계: 영상 16개 · 장면 카드 150개 · 질문 대상 15개**
+**합계: 영상 15개 · 장면 카드 143개 · 질문 대상 14개**
 
-## 질문 대상에서 제외한 영상
+## 질문 대상에서 제외 / 비어 있는 자리
 
-| video_id | 사유 |
+| 대상 | 사유 |
 | --- | --- |
+| 5번 자리 | uncSsiLbz1E 가 유튜브에서 삭제됨(2026-09-29 확인). 새 영상으로 교체 예정 |
 | Zlo2JQzihwc | 119초 영상인데 캡처가 78.5초에서 끊김(66%). 빈 구간의 질문은 시스템이 찾을 수 없어 질문 대상에서 제외. 색인에는 남겨 오답 후보로 씁니다. |
