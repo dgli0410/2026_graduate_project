@@ -17,25 +17,37 @@ function currentVideoId() {
   return url.searchParams.get("v");
 }
 
+function visibleVideos() {
+  return Array.from(document.querySelectorAll("video")).filter((v) => {
+    const r = v.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+  });
+}
+
 function activeReel() {
   // 쇼츠는 여러 개가 DOM 에 동시에 존재합니다. 지금 보이는 것만 골라야 합니다.
-  return (
-    document.querySelector("ytd-reel-video-renderer[is-active]") ||
-    document.querySelector("#shorts-player") ||
-    document
-  );
+  const marked = document.querySelector("ytd-reel-video-renderer[is-active]");
+  if (marked) return marked;
+
+  // ⚠ 유튜브가 쇼츠 DOM 을 바꾸면 위 선택자가 빗나갑니다. 예전에는 그때
+  //   #shorts-player 나 document 로 떨어졌는데, 그러면 textOf 가 문서 전체의
+  //   "첫 번째" 쇼츠 제목을 집어서 제목이 처음 본 영상으로 고정됐습니다.
+  //   video_id 는 URL 에서 읽으므로 멀쩡해 알아채기 어려운 버그였습니다.
+  //   그래서 화면에 실제로 보이는 video 에서 컨테이너를 거슬러 올라갑니다.
+  for (const v of visibleVideos()) {
+    const reel = v.closest("ytd-reel-video-renderer");
+    if (reel) return reel;
+  }
+  return null; // 못 찾으면 null. 부르는 쪽이 document.title 로 넘어갑니다.
 }
 
 function activeVideoElement() {
   const scope = activeReel();
-  const scoped = scope.querySelector && scope.querySelector("video");
+  const scoped = scope && scope.querySelector ? scope.querySelector("video") : null;
   if (scoped && scoped.readyState >= 2) return scoped;
 
   const videos = Array.from(document.querySelectorAll("video"));
-  const visible = videos.filter((v) => {
-    const r = v.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
-  });
+  const visible = visibleVideos();
   // 스크롤 시 요소가 교체되므로 readyState 를 확인하고 접근합니다.
   return (
     visible.find((v) => v.readyState >= 2 && !v.paused) ||
@@ -69,19 +81,24 @@ function readVideoInfo() {
 
   const reel = activeReel();
   const title =
-    textOf(reel, [
-      "yt-shorts-video-title-view-model h2",
-      "yt-shorts-video-title-view-model",
-      ".ytShortsVideoTitleViewModelShortsVideoTitle",
-      "h2.title",
-      "#title h2",
-      ".ytd-reel-player-header-renderer #video-title",
-    ]) ||
-    textOf(document, ["h1.ytd-watch-metadata", "#title h1", "meta[name='title']"]) ||
-    cleanTitle(document.title);
+    (reel
+      ? textOf(reel, [
+          "yt-shorts-video-title-view-model h2",
+          "yt-shorts-video-title-view-model",
+          ".ytShortsVideoTitleViewModelShortsVideoTitle",
+          "h2.title",
+          "#title h2",
+          ".ytd-reel-player-header-renderer #video-title",
+        ])
+      : "") ||
+    // 쇼츠를 넘기면 같이 바뀌므로, 문서 전체를 뒤지는 선택자보다 믿을 만합니다.
+    cleanTitle(document.title) ||
+    textOf(document, ["h1.ytd-watch-metadata", "#title h1", "meta[name='title']"]);
 
   const channel =
-    textOf(reel, ["#channel-name a", "yt-reel-channel-bar-view-model a", "#text-container"]) ||
+    (reel
+      ? textOf(reel, ["#channel-name a", "yt-reel-channel-bar-view-model a", "#text-container"])
+      : "") ||
     textOf(document, ["#owner #channel-name a", "ytd-channel-name a"]);
 
   const video = activeVideoElement();

@@ -70,6 +70,35 @@ def _transcribe_whisperx(audio: Path) -> list[dict]:
     ]
 
 
+def _decode_audio(audio: Path, sample_rate: int = 16000):
+    """오디오 파일 -> 16kHz 모노 float32 배열.
+
+    ⚠ faster-whisper 에 **파일 경로를 그대로 넘기면 안 됩니다.** 내부의 decode_audio 가
+      `av.open(..., metadata_errors=...)` 를 부르는데 PyAV 15 부터 그 인자가 없어져
+      TypeError 로 죽습니다. 파이프라인이 예외를 삼켜서 **음성이 조용히 전부 빈 값**이
+      됩니다(증상: 모든 장면 카드의 asr_text 가 빈 문자열).
+      faster-whisper 1.2.1 이 최신이라 올려서 피할 수 없고, PyAV 를 내리면
+      Python 3.13 용 wheel 이 없어 빌드에 실패합니다. 그래서 직접 디코딩합니다.
+    """
+    import av
+    import numpy as np
+    from av.audio.resampler import AudioResampler
+
+    chunks = []
+    with av.open(str(audio), mode="r") as container:
+        if not container.streams.audio:
+            return np.zeros(0, dtype=np.float32)
+        resampler = AudioResampler(format="s16", layout="mono", rate=sample_rate)
+        for frame in container.decode(container.streams.audio[0]):
+            for out in resampler.resample(frame):
+                chunks.append(out.to_ndarray().reshape(-1))
+        for out in resampler.resample(None):  # 남은 버퍼를 비웁니다
+            chunks.append(out.to_ndarray().reshape(-1))
+    if not chunks:
+        return np.zeros(0, dtype=np.float32)
+    return np.concatenate(chunks).astype(np.float32) / 32768.0
+
+
 def _transcribe_faster_whisper(audio: Path) -> list[dict]:
     """WhisperX 안에서 도는 바로 그 엔진. 단어 단위 시각까지 받아옵니다."""
     global _faster_model
@@ -78,8 +107,15 @@ def _transcribe_faster_whisper(audio: Path) -> list[dict]:
     if _faster_model is None:
         _faster_model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
 
+    signal = _decode_audio(audio)
+    if len(signal) == 0:
+        return []
+
+    # vad_filter 는 필수입니다. 쇼츠는 내레이션 없이 배경음악만 있는 경우가 많은데,
+    # 그때 Whisper 가 2초 간격으로 그럴듯한 단어를 지어냅니다(환각).
+    # 실측: 된장찌개 영상에서 VAD 없으면 "다진마늘/갈비/양파/깻잎" 15개, 켜면 0개.
     segments, _ = _faster_model.transcribe(
-        str(audio), language="ko", word_timestamps=True, vad_filter=True
+        signal, language="ko", word_timestamps=True, vad_filter=True
     )
     results: list[dict] = []
     for seg in segments:

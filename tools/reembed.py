@@ -23,7 +23,7 @@ import argparse
 import math
 import sys
 
-from server import db, embedder, vectors
+from server import db, embedder, image_embedder, media, vectors
 from server.config import (
     DEFAULT_CONDITION,
     GEMINI_EMBED_MODEL,
@@ -33,6 +33,24 @@ from server.config import (
 from server.pipeline.segmenter import search_text
 
 BATCH = 32  # embedder._encode_gemini 의 배치 크기와 같아야 호출 수 예측이 맞습니다
+
+
+def encode_images(user_id: str, video_id: str, segments: list) -> "object | None":
+    """그림 좌표(SigLIP)를 다시 만듭니다. 저장된 프레임만 읽으므로 API 호출은 없습니다.
+
+    ⚠ 이것을 빼고 upsert 하면 **기존 그림 좌표가 지워집니다.**
+      Qdrant 는 같은 id 로 upsert 할 때 포인트를 통째로 교체하며,
+      이름 있는 벡터(named vector)를 부분 갱신하지 않습니다. 글 좌표만 담아 보내면
+      그 포인트에서 그림 좌표가 사라지고, 검색은 조용히 글 좌표만 쓰게 됩니다.
+    """
+    if not image_embedder.is_enabled():
+        return None
+    frame_dir = media.frames_dir(user_id, video_id)
+    paths = [frame_dir / str(seg["frame_path"]).rsplit("/", 1)[-1] for seg in segments]
+    if not all(p.is_file() for p in paths):
+        print("    대표 프레임 파일이 없어 그림 좌표는 건너뜁니다")
+        return None
+    return image_embedder.encode_images(paths)
 
 
 def collection_dim(condition: str) -> int | None:
@@ -133,9 +151,10 @@ def main() -> int:
         except Exception as exc:  # noqa: BLE001 - 한 영상이 실패해도 나머지는 계속합니다
             print(f"  실패 {video_id}: {type(exc).__name__}: {str(exc)[:120]}")
             continue
+        image_vectors = encode_images(user_id, video_id, segments)
         # point id 가 (user_id, segment_id) 로 정해져 있어 같은 자리를 덮어씁니다.
         vectors.upsert_segments(
-            user_id, video_id, title, segments, text_vectors, None, args.condition
+            user_id, video_id, title, segments, text_vectors, image_vectors, args.condition
         )
         done += 1
         print(f"  완료 {video_id}  장면 {len(segments)}개")
