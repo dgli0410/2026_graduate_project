@@ -13,6 +13,7 @@ D 담당이 붙일 때:
 """
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import numpy as np
@@ -41,7 +42,34 @@ TEXT_MAX_LENGTH = 64
 # ("a photo of" 0.664 / "a photo showing" 0.666). CLIP 문헌의 표준 형태를 씁니다.
 TEXT_TEMPLATE = "a photo of {}"
 
-_translated: dict[str, str] = {}
+# ⚠ 번역 캐시는 **디스크에 둡니다.** 프로세스 메모리에만 두면 서버를 껐다 켤 때마다
+#   같은 질의가 다시 번역되고, 영어 문장이 조금만 달라져도 그림 좌표 점수가 통째로
+#   바뀝니다. 실측: 서버 재시작 전후로 같은 질의의 "맞은 프레임"이 14.5초 -> 15.5초로
+#   이동했습니다. 그 상태로 A/B 를 하면 개선 때문인지 번역 때문인지 구분할 수 없습니다.
+_CACHE_PATH = Path(__file__).resolve().parent.parent / "data" / "query_translations.json"
+_translated: dict[str, str] | None = None
+
+
+def _cache() -> dict[str, str]:
+    global _translated
+    if _translated is None:
+        try:
+            _translated = json.loads(_CACHE_PATH.read_text(encoding="utf-8"))
+        except Exception:  # noqa: BLE001 - 캐시가 없거나 깨졌으면 새로 시작합니다
+            _translated = {}
+    return _translated
+
+
+def _remember(text: str, english: str) -> None:
+    cache = _cache()
+    cache[text] = english
+    try:
+        _CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        _CACHE_PATH.write_text(
+            json.dumps(cache, ensure_ascii=False, indent=1), encoding="utf-8"
+        )
+    except Exception as exc:  # noqa: BLE001 - 저장 실패가 검색을 막지 않습니다
+        print(f"[image_embedder] 번역 캐시 저장 실패: {type(exc).__name__}")
 
 
 def _to_english(text: str) -> str:
@@ -52,8 +80,9 @@ def _to_english(text: str) -> str:
     """
     if not SIGLIP_QUERY_TRANSLATE or not text.strip():
         return text
-    if text in _translated:
-        return _translated[text]
+    cached = _cache().get(text)
+    if cached:
+        return cached
     try:
         from server.config import ANSWER_MODEL
         from server.gemini import get_client
@@ -66,7 +95,7 @@ def _to_english(text: str) -> str:
         out = (getattr(r, "text", "") or "").strip().splitlines()
         out = out[0].strip() if out else ""
         if out:
-            _translated[text] = out
+            _remember(text, out)
             return out
     except Exception as exc:  # noqa: BLE001 - 번역 실패가 검색을 막지 않습니다
         print(f"[image_embedder] 질의 번역 실패, 한국어 그대로 씁니다: {type(exc).__name__}")
