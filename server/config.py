@@ -28,7 +28,9 @@ COMPUTE_TYPE = _flag("COMPUTE_TYPE", "int8" if DEVICE == "cpu" else "float16")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 # 모델을 고를 때는 tools/check_models.py 로 응답 속도를 먼저 재보세요.
 # 최신 모델일수록 붐벼서 503(일시 과부하)이 잦습니다.
-CAPTION_MODEL = os.getenv("CAPTION_MODEL", "gemini-3.5-flash-lite")
+# ⚠ ANSWER_MODEL 과 **다른 모델**로 두세요. 무료 티어 할당량은 모델별로 따로 잡혀서,
+#   캡션과 답변을 같은 모델로 두면 하루 20회를 나눠 쓰게 됩니다(둘로 나누면 40회).
+CAPTION_MODEL = os.getenv("CAPTION_MODEL", "gemini-3.5-flash")
 ANSWER_MODEL = os.getenv("ANSWER_MODEL", "gemini-3.5-flash-lite")
 # 마스터 문서 단계 6 / 12장: 영상 1개당 Gemini 호출 상한을 코드로 강제합니다.
 MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "3"))
