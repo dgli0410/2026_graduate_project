@@ -16,6 +16,7 @@ from difflib import SequenceMatcher
 from pathlib import Path
 
 from server.config import backend
+from server.model_lock import MODEL_LOCK
 
 _reader = None
 
@@ -37,7 +38,27 @@ def recognize_all(frames: list[tuple[float, Path]]) -> list[dict]:
     """
     if uses_grid():
         return []
-    return _recognize_easyocr(frames)
+    return recognize_all_counted(frames)[0]
+
+
+class OcrFailed(RuntimeError):
+    """모든 프레임에서 글자 읽기가 실패함. '자막이 없는 영상'과 구분하려고 따로 둡니다."""
+
+    error_code = "OCR_FAILED"
+
+
+def recognize_all_counted(frames: list[tuple[float, Path]]) -> tuple[list[dict], dict]:
+    """recognize_all 과 같고, 실패한 프레임 수와 첫 오류를 함께 돌려줍니다.
+
+    모든 프레임이 실패하면 OcrFailed 를 던집니다. 일부만 실패하면 결과는 쓰고 그 사실을 남깁니다.
+    """
+    counts: dict = {"frames": len(frames), "failed_frames": 0, "first_error": None}
+    if uses_grid():
+        return [], counts
+    results = _recognize_easyocr(frames, counts)
+    if frames and counts["failed_frames"] == len(frames):
+        raise OcrFailed(f"프레임 {len(frames)}장 모두 글자 읽기에 실패했습니다: {counts['first_error']}")
+    return results, counts
 
 
 def _normalize(text: str) -> str:
@@ -107,16 +128,18 @@ def _drop_static_overlays(per_frame: list[tuple[float, list[tuple]]]) -> list[tu
     ]
 
 
-def _recognize_easyocr(frames: list[tuple[float, Path]]) -> list[dict]:
+def _recognize_easyocr(frames: list[tuple[float, Path]], counts: dict | None = None) -> list[dict]:
     global _reader
     import easyocr
 
     from server.config import DEVICE
 
     if _reader is None:
-        # verbose=False: 첫 실행 때 뜨는 다운로드 진행바(█)가 한글 윈도우 콘솔(cp949)에서
-        # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
-        _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _reader is None:
+                # verbose=False: 첫 실행 때 뜨는 다운로드 진행바(█)가 한글 윈도우 콘솔(cp949)에서
+                # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
+                _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
 
     per_frame: list[tuple[float, list[tuple]]] = []
     for time_sec, path in frames:
@@ -124,7 +147,18 @@ def _recognize_easyocr(frames: list[tuple[float, Path]]) -> list[dict]:
             # detail=1 로 신뢰도와 위치를 함께 받습니다. detail=0 으로 글자만 받으면
             # 배경 무늬에서 나온 쓰레기("C다 'F60\" 1' ;;}")를 걸러낼 방법이 없습니다.
             boxes = _reader.readtext(str(path))
-        except Exception:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다
+        except Exception as exc:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다(실패 수는 셉니다)
+            if counts is not None:
+                counts["failed_frames"] += 1
+                if counts["first_error"] is None:
+                    from server.pipeline.health import describe_exception
+
+                    info = describe_exception(exc)
+                    # 로컬 모델 오류라 Gemini 등급으로 읽지 않습니다. 파일 이름(00000500.jpg)의 '500' 을
+                    # 서버 오류로 오해하면 '잠깐 뒤 다시'로 보여 원인을 잘못 짚습니다.
+                    info["error_code"] = "FATAL"
+                    info["message"] = info["message"][:300]
+                    counts["first_error"] = info
             continue
         picked: list[tuple] = []
         seen: set[str] = set()

@@ -25,6 +25,7 @@ from server.config import (
     SIGLIP_QUERY_TRANSLATE,
 )
 from server.embedder import l2_normalize
+from server.model_lock import MODEL_LOCK
 
 _model = None
 _processor = None
@@ -138,9 +139,16 @@ def is_enabled() -> bool:
 
 
 def _load():
-    global _model, _processor
     if _model is not None:
         return _model, _processor
+    with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+        if _model is None:
+            _build()
+    return _model, _processor
+
+
+def _build() -> None:
+    global _model, _processor
     import torch
     from transformers import AutoModel, AutoProcessor
 
@@ -154,7 +162,6 @@ def _load():
 
         base = PeftModel.from_pretrained(base, SIGLIP_ADAPTER)
     _model = base.eval()
-    return _model, _processor
 
 
 def dim() -> int:

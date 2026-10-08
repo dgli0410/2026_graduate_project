@@ -17,6 +17,7 @@ from pathlib import Path
 from pydantic import BaseModel, Field
 
 from server.config import CAPTION_MODEL, COMPUTE_TYPE, DEVICE, WHISPER_MODEL, backend
+from server.model_lock import MODEL_LOCK
 
 _whisper_model = None
 _faster_model = None
@@ -46,9 +47,11 @@ def _transcribe_whisperx(audio: Path) -> list[dict]:
     import whisperx
 
     if _whisper_model is None:
-        _whisper_model = whisperx.load_model(
-            WHISPER_MODEL, DEVICE, compute_type=COMPUTE_TYPE, language="ko"
-        )
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _whisper_model is None:
+                _whisper_model = whisperx.load_model(
+                    WHISPER_MODEL, DEVICE, compute_type=COMPUTE_TYPE, language="ko"
+                )
     signal = whisperx.load_audio(str(audio))
     result = _whisper_model.transcribe(signal, batch_size=8)
 
@@ -105,7 +108,9 @@ def _transcribe_faster_whisper(audio: Path) -> list[dict]:
     from faster_whisper import WhisperModel
 
     if _faster_model is None:
-        _faster_model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _faster_model is None:
+                _faster_model = WhisperModel(WHISPER_MODEL, device=DEVICE, compute_type=COMPUTE_TYPE)
 
     signal = _decode_audio(audio)
     if len(signal) == 0:
@@ -141,7 +146,7 @@ def _transcribe_faster_whisper(audio: Path) -> list[dict]:
 def _transcribe_gemini(audio: Path) -> list[dict]:
     from google.genai import types
 
-    from server.gemini import call_with_retry, get_client
+    from server.gemini import EmptyResponse, call_with_retry, empty_reason, get_client
 
     client = get_client()
     data = audio.read_bytes()
@@ -161,7 +166,9 @@ def _transcribe_gemini(audio: Path) -> list[dict]:
     )
     parsed = response.parsed
     if parsed is None:
-        return []
+        # 차단(SAFETY · RECITATION)이나 JSON 깨짐입니다. 빈 목록으로 돌려주면 '말이 없는 영상'과
+        # 구분할 수 없으므로 오류로 올립니다(analyze 가 음성 단계 오류로 기록하고 나머지로 계속).
+        raise EmptyResponse(f"음성 인식 응답을 읽지 못했습니다({empty_reason(response)}).")
     transcript = parsed if isinstance(parsed, Transcript) else Transcript.model_validate(parsed)
     return [
         {"start": float(u.start), "end": float(u.end), "text": u.text.strip()}

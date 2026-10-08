@@ -10,6 +10,7 @@ from __future__ import annotations
 import numpy as np
 
 from server.config import BGE_MODEL, GEMINI_API_KEY, GEMINI_EMBED_DIM, GEMINI_EMBED_MODEL
+from server.model_lock import MODEL_LOCK
 
 _bge_model = None
 
@@ -33,9 +34,12 @@ def dim() -> int:
 def _encode_gemini(texts: list[str], task_type: str) -> np.ndarray:
     from google.genai import types
 
-    from server.gemini import call_with_retry, get_client
+    from server.gemini import INTERACTIVE_RETRY, call_with_retry, get_client
 
     client = get_client()
+    # 검색창 질문은 사람이 기다립니다. 저장 작업의 재시도(한 번에 최대 30초)를 그대로 쓰면 한도에 걸렸을 때
+    # 검색이 1분 넘게 멈춥니다. 질문 좌표는 예전 재시도 시간(최대 약 14초) 안에서만 다시 부릅니다.
+    retry = INTERACTIVE_RETRY if task_type == "RETRIEVAL_QUERY" else {}
     vectors: list[list[float]] = []
     for i in range(0, len(texts), 32):  # 배치 상한이 있어 나눠 호출합니다
         # ⚠ 문자열 리스트를 그대로 넘기면 gemini-embedding-2 는 그것을 "한 문서의 여러
@@ -51,7 +55,8 @@ def _encode_gemini(texts: list[str], task_type: str) -> np.ndarray:
                 config=types.EmbedContentConfig(
                     task_type=task_type, output_dimensionality=GEMINI_EMBED_DIM
                 ),
-            )
+            ),
+            **retry,
         )
         vectors.extend(list(e.values) for e in response.embeddings)
     if len(vectors) != len(texts):
@@ -70,7 +75,9 @@ def _encode_bge(texts: list[str]) -> np.ndarray:
 
         from server.config import DEVICE
 
-        _bge_model = BGEM3FlagModel(BGE_MODEL, use_fp16=DEVICE == "cuda", devices=DEVICE)
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _bge_model is None:
+                _bge_model = BGEM3FlagModel(BGE_MODEL, use_fp16=DEVICE == "cuda", devices=DEVICE)
     out = _bge_model.encode(texts, batch_size=32, max_length=256)["dense_vecs"]
     return l2_normalize(np.asarray(out, dtype=np.float32))
 
