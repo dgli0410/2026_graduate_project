@@ -13,6 +13,8 @@ demo 는 로컬 파일 모드로 돕니다(도커 불필요).
 """
 from __future__ import annotations
 
+import gc
+import shutil
 import uuid
 from functools import lru_cache
 from typing import Any
@@ -68,6 +70,29 @@ def ensure_collection(condition: str | None = None) -> str:
                 field_schema=models.PayloadSchemaType.KEYWORD,
             )
     return name
+
+
+def drop_collection(condition: str | None = None) -> None:
+    """창고를 통째로 지웁니다. 같은 이름으로 다시 만들어도 예전 점이 되살아나지 않게 합니다.
+
+    qdrant-client 로컬 모드의 delete_collection 은 저장 파일(storage.sqlite)을 닫지 않은 채 지워서,
+    Windows 에서는 폴더가 남습니다. 같은 이름으로 다시 만들면 그 파일을 읽어 **지운 점이 되살아나고**,
+    차원을 바꿔 다시 만든 경우 저장이 "could not broadcast (8,) into (16,)" 로 실패합니다
+    (재현: 16차원 창고에 점 1개 → 지우기 → 8차원으로 다시 만들기 → count 1).
+    닫히지 않은 핸들은 가비지 수집 때 풀리므로, 그 뒤 남은 폴더를 지웁니다.
+    """
+    name = _collection(condition)
+    client = get_client()
+    if client.collection_exists(name):
+        client.delete_collection(name)
+    if QDRANT_URL:
+        return
+    path = QDRANT_PATH / "collection" / name
+    if path.exists():
+        gc.collect()
+        shutil.rmtree(path, ignore_errors=True)
+        if path.exists():
+            raise RuntimeError(f"예전 창고 파일을 지우지 못했습니다: {path}. 서버를 끄고 이 폴더를 지운 뒤 다시 실행하세요.")
 
 
 def collection_exists(condition: str | None = None) -> bool:
@@ -178,8 +203,10 @@ def delete_video(user_id: str, video_id: str, condition: str | None = None) -> N
 
 
 def delete_video_all_conditions(user_id: str, video_id: str) -> None:
-    """영상을 지울 때는 모든 조건의 창고에서 지워야 합니다."""
-    from server.config import CONDITIONS
+    """영상을 지울 때는 모든 조건의 창고에서 지워야 합니다(글 좌표 비교용 창고 포함)."""
+    from server.config import CONDITIONS, EMBED_CANDIDATES, embed_target
 
     for condition in CONDITIONS:
         delete_video(user_id, video_id, condition)
+    for model in EMBED_CANDIDATES:
+        delete_video(user_id, video_id, embed_target(model))

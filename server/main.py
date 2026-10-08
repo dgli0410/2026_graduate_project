@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from server import db, embedder, image_embedder, media, search as search_mod, vectors
+from server import db, embed_compare, embedder, image_embedder, media, search as search_mod, vectors
 from server.config import (
     CAPTION_MODEL,
     CONDITIONS,
@@ -96,6 +96,16 @@ class SearchRequest(BaseModel):
     video_id: str | None = None
     playlist_id: str | None = None
     top_k: int = Field(default=SEARCH_TOP_K, ge=1, le=20)
+
+
+class EmbedSearchRequest(BaseModel):
+    query: str
+    model: str
+    video_id: str | None = None
+    playlist_id: str | None = None
+    top_k: int = Field(default=SEARCH_TOP_K, ge=1, le=20)
+    # 모델 비교에는 답변이 필요 없습니다(Gemini 호출 절약). 켜면 /api/search 와 같은 답변을 만듭니다.
+    with_answer: bool = False
 
 
 class PlaylistRequest(BaseModel):
@@ -447,6 +457,33 @@ def compare(req: CompareRequest, user_id: str = Depends(current_user)) -> dict[s
 
 
 # --- 단계 12 · 검색 --------------------------------------------------------
+
+# --- 글 좌표 모델 비교 ------------------------------------------------------
+# 같은 장면 카드를 후보 모델로 다시 색인한 창고에서 찾습니다(tools/build_embed_index.py 로 색인).
+# 기본 검색(/api/search)과 기본 창고는 건드리지 않습니다.
+
+@app.get("/api/embed-compare")
+def embed_compare_status(user_id: str = Depends(current_user)) -> dict[str, Any]:
+    return {"candidates": embed_compare.status(user_id)}
+
+
+@app.post("/api/embed-compare/search")
+def embed_compare_search(req: EmbedSearchRequest, user_id: str = Depends(current_user)) -> dict[str, Any]:
+    try:
+        return embed_compare.search(
+            user_id,
+            req.query,
+            req.model,
+            video_id=req.video_id,
+            playlist_id=req.playlist_id,
+            top_k=req.top_k,
+            with_answer=req.with_answer,
+        )
+    except embed_compare.NotIndexed as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
 
 @app.post("/api/search")
 def do_search(req: SearchRequest, user_id: str = Depends(current_user)) -> dict[str, Any]:

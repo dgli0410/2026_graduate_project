@@ -209,6 +209,103 @@ def use_condition(name: str):
         _active_backends.reset(token)
 
 
+# =========================================================================
+# 글 좌표 모델 비교 — 저장된 장면 카드는 그대로 두고 좌표만 다시 만들어 비교합니다
+# =========================================================================
+# 조건(CONDITIONS)은 영상을 처음부터 다시 분석합니다(음성 · 자막 · Gemini 장면 설명). 글 좌표 모델만 비교할
+# 때는 같은 글을 써야 차이가 모델에서만 나오므로, 기본 조건에 저장된 장면 카드를 후보 모델로 다시 색인해
+# 후보마다 따로 둔 창고(emb_<이름>)에 넣습니다. 생성 호출(캡션 · 음성 · 요약)은 하지 않습니다.
+#   색인:  python -m tools.build_embed_index --model kure
+#   검색:  server.embed_compare.search(...) 또는 POST /api/embed-compare/search
+# 비교 탭에 섞이지 않도록 CONDITIONS 와 따로 둡니다(거기서 '돌리기'를 누르면 전체 재분석이 됩니다).
+# 공개 한국어 벤치마크 근거와 고른 이유는 docs/embedding-candidates.md 에 있습니다.
+EMBED_CANDIDATES: dict[str, dict] = {
+    "bge": {
+        "label": "BGE-M3",
+        "text_embed": "bge",
+        "settings": {},
+        "requires": ["FlagEmbedding"],
+    },
+    "kure": {
+        "label": "KURE-v1",
+        "text_embed": "st",
+        "settings": {"ST_MODEL": "nlpai-lab/KURE-v1", "ST_QUERY_PREFIX": "", "ST_DOC_PREFIX": ""},
+        "requires": ["sentence_transformers"],
+    },
+    "arctic": {
+        "label": "arctic-l-v2.0-ko",
+        "text_embed": "st",
+        # 질문에만 "query: " 를 붙입니다(모델 카드). 빠뜨리면 오류 없이 점수만 떨어집니다.
+        "settings": {
+            "ST_MODEL": "dragonkue/snowflake-arctic-embed-l-v2.0-ko",
+            "ST_QUERY_PREFIX": "query: ",
+            "ST_DOC_PREFIX": "",
+        },
+        "requires": ["sentence_transformers"],
+    },
+    "e5small": {
+        "label": "e5-small-ko-v2",
+        "text_embed": "st",
+        # 작은 모델(118M · 384차원) — 큰 모델이 실제로 얼마나 더 나은지 보는 기준. 질문 · 장면 접두어 둘 다 필요.
+        "settings": {
+            "ST_MODEL": "dragonkue/multilingual-e5-small-ko-v2",
+            "ST_QUERY_PREFIX": "query: ",
+            "ST_DOC_PREFIX": "passage: ",
+        },
+        "requires": ["sentence_transformers"],
+    },
+    "gemini": {
+        "label": "gemini-embedding-001",
+        "text_embed": "gemini",
+        # 생성 호출은 아니지만 임베딩 API 를 부릅니다(색인할 때 장면 32개당 1회, 질문마다 1회).
+        "settings": {},
+        "requires": [],
+    },
+}
+EMBED_PREFIX = "emb_"
+
+
+def embed_target(model: str) -> str:
+    """후보 모델의 창고 이름표(collection_for 에 넘기는 값). 예: kure -> emb_kure"""
+    if model not in EMBED_CANDIDATES:
+        raise ValueError(f"모르는 글 좌표 후보입니다: {model}. {list(EMBED_CANDIDATES)} 중에서 고르세요.")
+    return EMBED_PREFIX + model
+
+
+@contextmanager
+def use_embedding(model: str):
+    """이 블록 안에서만 글 좌표를 그 후보 모델로 만듭니다. 나머지 백엔드(그림 좌표 등)는 .env 그대로."""
+    embed_target(model)  # 이름 확인
+    spec = EMBED_CANDIDATES[model]
+    token = _active_backends.set({"text_embed": spec["text_embed"]})
+    settings_token = _active_settings.set(dict(spec["settings"]))
+    try:
+        yield
+    finally:
+        _active_settings.reset(settings_token)
+        _active_backends.reset(token)
+
+
+def embed_candidate_info(model: str) -> dict:
+    """후보 하나의 설명 + 필요한 패키지가 깔려 있는지."""
+    spec = EMBED_CANDIDATES[model]
+    missing = [p.replace("_", "-") for p in spec["requires"] if not _installed(p)]
+    if spec["text_embed"] == "gemini" and not GEMINI_API_KEY:
+        missing.append("GEMINI_API_KEY")
+    return {
+        "name": model,
+        "label": spec["label"],
+        "text_embed": spec["text_embed"],
+        "model": spec["settings"].get("ST_MODEL")
+        or {"bge": BGE_MODEL, "gemini": GEMINI_EMBED_MODEL}[spec["text_embed"]],
+        "query_prefix": spec["settings"].get("ST_QUERY_PREFIX", ""),
+        "doc_prefix": spec["settings"].get("ST_DOC_PREFIX", ""),
+        "ready": not missing,
+        "missing": missing,
+        "collection": collection_for(embed_target(model)),
+    }
+
+
 def collection_for(condition: str) -> str:
     """조건별 Qdrant collection 이름."""
     if condition == DEFAULT_CONDITION:

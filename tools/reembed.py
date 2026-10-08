@@ -135,7 +135,7 @@ def main() -> int:
 
         if args.recreate and have is not None:
             print(f"  창고 {name} 를 비웁니다 ({have}차원 -> {want}차원)")
-            vectors.get_client().delete_collection(name)
+            vectors.drop_collection(args.condition)
 
         vectors.ensure_collection(args.condition)
     except RuntimeError as exc:
