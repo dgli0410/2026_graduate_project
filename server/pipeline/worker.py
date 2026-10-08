@@ -14,8 +14,9 @@ import time
 import traceback
 
 from server import db, vectors
-from server.config import DEFAULT_CONDITION, use_condition
+from server.config import ANSWER_MODEL, DEFAULT_CONDITION, use_condition
 from server.pipeline.analyze import analyze_media
+from server.pipeline.health import ERROR, OK, OK_EMPTY, stage, summarize_health
 from server.pipeline.summarizer import summarize
 
 Job = tuple[str, str, str, str]  # (kind, user_id, video_id, condition)
@@ -55,6 +56,11 @@ def _process_save(user_id: str, video_id: str) -> None:
     # 단계 9 · 전체 요약
     db.set_status(user_id, video_id, "summarizing")
     summary = summarize(video["title"], segments)
+    # 단계별 상태 + 요약 단계. 보관함의 "⚠ 일부 분석 실패" 와 평가 전 점검이 이 값을 봅니다.
+    health = dict(result["analysis_health"])
+    health["summary_llm"] = _summary_stage(summary)
+    health["summary"] = summarize_health({k: v for k, v in health.items() if k != "summary"})
+    summary["analysis_health"] = health
     summary["segment_count"] = len(segments)
     summary["counts"] = result["counts"]
     summary["timings"] = result["timings"]  # 9장 실험 "처리 시간 분해" 용
@@ -71,10 +77,22 @@ def _process_save(user_id: str, video_id: str) -> None:
         video_id,
         DEFAULT_CONDITION,
         segments,
-        result["counts"],
+        {**result["counts"], "analysis_health": health},
         result["timings"],
         summary["total_seconds"],
     )
+
+
+def _summary_stage(summary: dict) -> dict:
+    """요약 호출의 상태 한 칸. 대체 요약이면 그 이유를 남깁니다."""
+    if not summary.get("degraded"):
+        return stage(OK, backend="gemini", model_id=ANSWER_MODEL)
+    error = summary.get("degraded_error")
+    if error:
+        # 요약기가 예외에서 직접 뽑아 둔 등급을 그대로 씁니다(잘린 글을 다시 분류하지 않음).
+        return stage(ERROR, backend="gemini", model_id=ANSWER_MODEL, **error)
+    # 오류 정보가 없는 대체 요약은 카드가 없어 부르지 않은 경우뿐입니다(정상 빈 결과).
+    return stage(OK_EMPTY, backend="gemini", model_id=ANSWER_MODEL)
 
 
 def _process_condition(user_id: str, video_id: str, condition: str) -> None:
@@ -113,7 +131,8 @@ def _process_condition(user_id: str, video_id: str, condition: str) -> None:
         video_id,
         condition,
         result["segments"],
-        result["counts"],
+        # 조건 실행도 단계별 상태를 남깁니다(키 없이 돌린 조건의 장면 설명 실패 등을 비교표에서 구분).
+        {**result["counts"], "analysis_health": result["analysis_health"]},
         result["timings"],
         round(time.time() - started, 2),
     )

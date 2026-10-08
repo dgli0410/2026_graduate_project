@@ -125,3 +125,6 @@ td.win { color: var(--ok); font-weight: 700; }
 .steps { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 4px; }
 .steps li { display: flex; gap: 8px; align-items: center; }
 .kw { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); margin: 0 4px 4px 0; }
+
+/* 분석 일부 실패 경고 */
+.warn { margin-top: 4px; font-size: 11px; color: var(--danger); }

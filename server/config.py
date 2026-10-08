@@ -33,8 +33,10 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 CAPTION_MODEL = os.getenv("CAPTION_MODEL", "gemini-3.5-flash")
 ANSWER_MODEL = os.getenv("ANSWER_MODEL", "gemini-3.5-flash-lite")
 # 마스터 문서 단계 6 / 12장: 영상 1개당 Gemini 호출 상한을 코드로 강제합니다.
-MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "3"))
-GRID_FRAMES = int(os.getenv("GRID_FRAMES", "6"))  # 그리드 한 장에 넣을 프레임 수
+# 코드 기본값을 .env.example · CLAUDE.md 와 같게 둡니다(영상당 1회 · 그리드 12장). .env 에 이 줄이 없을 때
+# 3회 · 6장으로 돌면, 무료 한도(모델당 하루 20회)로 저장할 수 있는 영상 수가 1/3 로 줄어듭니다.
+MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "1"))
+GRID_FRAMES = int(os.getenv("GRID_FRAMES", "12"))  # 그리드 한 장에 넣을 프레임 수
 
 # --- 파이프라인 백엔드 -----------------------------------------------------
 # 각 단계는 "진짜 모델"과 "demo 대체품"을 같은 인터페이스로 갖습니다.
