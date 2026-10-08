@@ -4,14 +4,19 @@
 알려주는 경우가 많아서 이 단계의 기여도가 롱폼보다 큽니다(9장 실험 항목).
 
 백엔드:
-- easyocr : 진짜. 모든 프레임을 읽습니다. (C 담당 목표)
-- gemini  : demo 기본값. 캡션용 그리드 호출에서 함께 받아옵니다.
-            → 별도 호출이 없으므로 Gemini 호출 상한을 넘지 않습니다.
+- easyocr  : 진짜. 모든 프레임을 읽습니다. (C 담당 목표)
+- rapidocr : 진짜. PP-OCRv5 한국어 모델(ONNX). torch 없이 돌아 EasyOCR 보다 가볍습니다. 비교 후보.
+             `pip install rapidocr` — 첫 실행 때 모델(수 MB)을 내려받습니다.
+- gemini   : demo 기본값. 캡션용 그리드 호출에서 함께 받아옵니다.
+             → 별도 호출이 없으므로 Gemini 호출 상한을 넘지 않습니다.
+
+두 로컬 백엔드는 같은 거르기(신뢰도 · 글자 모양 · 워터마크)를 거칩니다. 비교할 때 차이가 엔진에서만 나오게.
 """
 from __future__ import annotations
 
 import re
 from collections import Counter
+from collections.abc import Callable
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -19,16 +24,19 @@ from server.config import backend
 from server.model_lock import MODEL_LOCK
 
 _reader = None
+_rapid = None
+LOCAL_BACKENDS = ("easyocr", "rapidocr")
 
 # 이 아래는 배경 무늬·로고 조각이 대부분입니다. 실측 쓰레기 예: "C다 'F60\" 1' ;;} S다a"
 # 0.5 로 잡으면 작은 한글 자막까지 날아갑니다(실측: 된장찌개 영상의 "양파 반 개",
 # "파 1/2대", "청고추 2개" 가 전부 사라졌습니다). 낮게 잡고 내용으로 거릅니다.
+# EasyOCR 에서 정한 값입니다. RapidOCR 도 같은 값을 쓰지만, 신뢰도 눈금이 엔진마다 달라 비교 뒤 다시 볼 값입니다.
 MIN_CONFIDENCE = 0.35
 
 
 def uses_grid() -> bool:
     """True 면 caption.describe() 가 반환한 ocr_text 를 그대로 씁니다."""
-    return backend("ocr") != "easyocr"
+    return backend("ocr") not in LOCAL_BACKENDS
 
 
 def recognize_all(frames: list[tuple[float, Path]]) -> list[dict]:
@@ -55,7 +63,10 @@ def recognize_all_counted(frames: list[tuple[float, Path]]) -> tuple[list[dict],
     counts: dict = {"frames": len(frames), "failed_frames": 0, "first_error": None}
     if uses_grid():
         return [], counts
-    results = _recognize_easyocr(frames, counts)
+    if backend("ocr") == "rapidocr":
+        results = _recognize_rapidocr(frames, counts)
+    else:
+        results = _recognize_easyocr(frames, counts)
     if frames and counts["failed_frames"] == len(frames):
         raise OcrFailed(f"프레임 {len(frames)}장 모두 글자 읽기에 실패했습니다: {counts['first_error']}")
     return results, counts
@@ -141,12 +152,47 @@ def _recognize_easyocr(frames: list[tuple[float, Path]], counts: dict | None = N
                 # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
                 _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
 
+    # detail=1(기본) 로 신뢰도와 위치를 함께 받습니다. detail=0 으로 글자만 받으면
+    # 배경 무늬에서 나온 쓰레기("C다 'F60\" 1' ;;}")를 걸러낼 방법이 없습니다.
+    return _read_frames(frames, lambda path: _reader.readtext(str(path)), counts)
+
+
+def _rapid_engine():
+    global _rapid
+    if _rapid is None:
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _rapid is None:
+                from rapidocr import LangRec, ModelType, OCRVersion, RapidOCR
+
+                _rapid = RapidOCR(params={
+                    "Det.ocr_version": OCRVersion.PPOCRV5, "Det.model_type": ModelType.MOBILE,
+                    "Rec.ocr_version": OCRVersion.PPOCRV5, "Rec.model_type": ModelType.MOBILE,
+                    "Rec.lang_type": LangRec.KOREAN,
+                })
+    return _rapid
+
+
+def _rapid_boxes(engine, path: Path) -> list[tuple]:
+    """RapidOCR 결과를 EasyOCR 과 같은 [(상자, 글자, 신뢰도), ...] 모양으로 바꿉니다."""
+    result = engine(str(path))
+    if result.boxes is None or not result.txts:
+        return []  # 글자를 하나도 못 찾은 프레임
+    return list(zip(result.boxes, result.txts, result.scores))
+
+
+def _recognize_rapidocr(frames: list[tuple[float, Path]], counts: dict | None = None) -> list[dict]:
+    engine = _rapid_engine()
+    return _read_frames(frames, lambda path: _rapid_boxes(engine, path), counts)
+
+
+def _read_frames(
+    frames: list[tuple[float, Path]], read: Callable[[Path], list[tuple]], counts: dict | None = None
+) -> list[dict]:
+    """프레임마다 read(경로) -> [(상자, 글자, 신뢰도), ...] 를 받아 거르고 워터마크를 지웁니다."""
     per_frame: list[tuple[float, list[tuple]]] = []
     for time_sec, path in frames:
         try:
-            # detail=1 로 신뢰도와 위치를 함께 받습니다. detail=0 으로 글자만 받으면
-            # 배경 무늬에서 나온 쓰레기("C다 'F60\" 1' ;;}")를 걸러낼 방법이 없습니다.
-            boxes = _reader.readtext(str(path))
+            boxes = read(path)
         except Exception as exc:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다(실패 수는 셉니다)
             if counts is not None:
                 counts["failed_frames"] += 1

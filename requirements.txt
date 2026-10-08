@@ -15,8 +15,12 @@ python-dotenv
 # faster-whisper
 # C · OCR       (OCR_BACKEND=easyocr)
 # easyocr
+# C · OCR 비교 후보 (OCR_BACKEND=rapidocr) — torch 불필요
+# rapidocr
 # D · BGE-M3    (TEXT_EMBED_BACKEND=bge)
 # FlagEmbedding>=1.2
+# D · 글 좌표 비교 후보 (TEXT_EMBED_BACKEND=st, 기본 KURE-v1)
+# sentence-transformers
 # D · SigLIP2   (IMAGE_EMBED_BACKEND=siglip)
 # torch
 # transformers>=4.45

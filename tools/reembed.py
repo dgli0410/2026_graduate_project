@@ -27,6 +27,7 @@ from server import db, embedder, image_embedder, media, vectors
 from server.config import (
     DEFAULT_CONDITION,
     GEMINI_EMBED_MODEL,
+    ST_MODEL,
     backend,
     collection_for,
 )
@@ -89,7 +90,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    model = GEMINI_EMBED_MODEL if backend("text_embed") == "gemini" else "BGE-M3"
+    model = {"gemini": GEMINI_EMBED_MODEL, "st": ST_MODEL}.get(backend("text_embed"), "BGE-M3")
     print(f"글 좌표 백엔드 : {backend('text_embed')}  ({model}, {embedder.dim()}차원)")
     print(f"조건           : {args.condition}")
 

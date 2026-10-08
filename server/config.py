@@ -42,12 +42,18 @@ GRID_FRAMES = int(os.getenv("GRID_FRAMES", "12"))  # 그리드 한 장에 넣을
 # 각 단계는 "진짜 모델"과 "demo 대체품"을 같은 인터페이스로 갖습니다.
 # 담당자가 진짜 모델을 붙이면 .env 한 줄만 바꾸면 됩니다.
 ASR_BACKEND = _flag("ASR_BACKEND", "gemini")  # whisperx | gemini   (C 담당)
-OCR_BACKEND = _flag("OCR_BACKEND", "gemini")  # easyocr  | gemini   (C 담당)
-TEXT_EMBED_BACKEND = _flag("TEXT_EMBED_BACKEND", "gemini")  # bge | gemini  (D 담당)
+OCR_BACKEND = _flag("OCR_BACKEND", "gemini")  # easyocr | rapidocr | gemini   (C 담당)
+TEXT_EMBED_BACKEND = _flag("TEXT_EMBED_BACKEND", "gemini")  # bge | st | gemini  (D 담당)
 IMAGE_EMBED_BACKEND = _flag("IMAGE_EMBED_BACKEND", "none")  # siglip | none (D 담당)
 
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
 BGE_MODEL = os.getenv("BGE_MODEL", "BAAI/bge-m3")
+# TEXT_EMBED_BACKEND=st — sentence-transformers 로 도는 임베딩 모델(한국어 특화 모델 비교용).
+# 기본값 KURE-v1 은 BGE-M3 를 한국어 검색으로 미세조정한 모델입니다(같은 1024차원, 접두어 없음).
+# 접두어가 필요한 모델(e5 계열의 "query: " · "passage: ")은 아래 두 줄로 넣습니다.
+ST_MODEL = os.getenv("ST_MODEL", "nlpai-lab/KURE-v1")
+ST_QUERY_PREFIX = os.getenv("ST_QUERY_PREFIX", "")
+ST_DOC_PREFIX = os.getenv("ST_DOC_PREFIX", "")
 SIGLIP_MODEL = os.getenv("SIGLIP_MODEL", "google/siglip2-base-patch16-naflex")
 # naflex = 원본 비율 유지. 확장프로그램 프레임이 540x960(9:16) 이라
 # 정사각형으로 찌그러뜨리는 -224 보다 유리합니다.
@@ -129,6 +135,29 @@ CONDITIONS: dict[str, dict] = {
             ["peft"],
         ],
     },
+    # local 과 음성 · 그림 좌표는 같고, 자막과 글 좌표만 다른 후보로 바꿉니다. 두 조건을 나란히 돌리면
+    # 그 두 모델의 차이만 보입니다.
+    "local_v2": {
+        "label": "로컬 모델 v2",
+        "description": "Whisper + RapidOCR + KURE-v1 + SigLIP2. 장면 설명만 Gemini 를 씁니다.",
+        "backends": {
+            "asr": "whisperx",
+            "ocr": "rapidocr",
+            "text_embed": "st",
+            "image_embed": "siglip",
+        },
+        # 글 좌표 모델을 이 조건 안에서 고정합니다. .env 의 ST_MODEL 을 바꿔도 이 조건의 창고와
+        # 질문 좌표는 KURE-v1 로 맞춰집니다(차원이 같은 모델끼리 섞이면 오류 없이 순위만 망가집니다).
+        "settings": {"ST_MODEL": "nlpai-lab/KURE-v1", "ST_QUERY_PREFIX": "", "ST_DOC_PREFIX": ""},
+        "requires": [
+            ["whisperx", "faster_whisper"],
+            ["rapidocr"],
+            ["sentence_transformers"],
+            ["torch"],
+            ["transformers"],
+            ["peft"],
+        ],
+    },
 }
 DEFAULT_CONDITION = "gemini"
 
@@ -142,6 +171,8 @@ _BACKEND_DEFAULTS = {
 }
 
 _active_backends: ContextVar[dict[str, str] | None] = ContextVar("active_backends", default=None)
+# 조건이 정해 둔 설정(백엔드 말고). 예: local_v2 의 ST_MODEL.
+_active_settings: ContextVar[dict[str, str] | None] = ContextVar("active_settings", default=None)
 
 
 def backend(kind: str) -> str:
@@ -150,6 +181,14 @@ def backend(kind: str) -> str:
     if override and kind in override:
         return override[kind]
     return _BACKEND_DEFAULTS[kind]
+
+
+def condition_setting(key: str, default: str) -> str:
+    """지금 조건이 그 설정을 정해 두었으면 그 값, 아니면 default(보통 .env 에서 읽은 값)."""
+    override = _active_settings.get()
+    if override and key in override:
+        return override[key]
+    return default
 
 
 @contextmanager
@@ -162,9 +201,11 @@ def use_condition(name: str):
     if name not in CONDITIONS:
         raise ValueError(f"모르는 조건입니다: {name}. {list(CONDITIONS)} 중에서 고르세요.")
     token = _active_backends.set(dict(CONDITIONS[name]["backends"]))
+    settings_token = _active_settings.set(dict(CONDITIONS[name].get("settings", {})))
     try:
         yield
     finally:
+        _active_settings.reset(settings_token)
         _active_backends.reset(token)
 
 

@@ -1,6 +1,7 @@
 """단계 8 · 글 좌표. 담당 D.
 
 - bge    : BAAI/bge-m3, 1024차원. 기존 졸업작품과 동일. (D 담당 목표)
+- st     : sentence-transformers 로 도는 모델(ST_MODEL, 기본 KURE-v1). 한국어 특화 임베딩 비교용
 - gemini : demo 기본값. 로컬 모델을 받지 않아 아무 노트북에서나 바로 됩니다.
 
 .env 의 TEXT_EMBED_BACKEND 한 줄로 바꿉니다.
@@ -13,6 +14,9 @@ from server.config import BGE_MODEL, GEMINI_API_KEY, GEMINI_EMBED_DIM, GEMINI_EM
 from server.model_lock import MODEL_LOCK
 
 _bge_model = None
+# st 모델은 **이름별로** 따로 올립니다. 조건(local_v2 는 KURE-v1 고정)과 .env 의 ST_MODEL 이 다를 수 있어,
+# 하나만 캐시하면 먼저 올라간 모델이 다른 조건의 좌표까지 만듭니다(차원이 같으면 오류도 없음).
+_st_models: dict[str, object] = {}
 
 
 def l2_normalize(arr: np.ndarray) -> np.ndarray:
@@ -28,7 +32,45 @@ def _backend() -> str:
 
 
 def dim() -> int:
-    return 1024 if _backend() == "bge" else GEMINI_EMBED_DIM
+    if _backend() == "bge":
+        return 1024
+    if _backend() == "st":
+        model = _st()
+        # 새 sentence-transformers 는 get_embedding_dimension 이 정식 이름입니다(옛 이름은 FutureWarning).
+        getter = getattr(model, "get_embedding_dimension", None) or model.get_sentence_embedding_dimension
+        return int(getter())
+    return GEMINI_EMBED_DIM
+
+
+def _st_setting(key: str) -> str:
+    """ST_MODEL · ST_QUERY_PREFIX · ST_DOC_PREFIX. 지금 조건이 정해 둔 값이 먼저, 없으면 .env 의 값."""
+    from server import config
+
+    return config.condition_setting(key, getattr(config, key))
+
+
+def _st():
+    name = _st_setting("ST_MODEL")
+    model = _st_models.get(name)
+    if model is None:
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            model = _st_models.get(name)
+            if model is None:
+                from sentence_transformers import SentenceTransformer
+
+                from server.config import DEVICE
+
+                model = SentenceTransformer(name, device=DEVICE)
+                # BGE 경로와 같은 길이로 자릅니다(공정한 비교). 장면 카드 글은 대부분 이보다 짧습니다.
+                model.max_seq_length = 256
+                _st_models[name] = model
+    return model
+
+
+def _encode_st(texts: list[str], is_query: bool) -> np.ndarray:
+    prefix = _st_setting("ST_QUERY_PREFIX" if is_query else "ST_DOC_PREFIX")
+    out = _st().encode([prefix + t for t in texts], batch_size=32, normalize_embeddings=True)
+    return l2_normalize(np.asarray(out, dtype=np.float32))
 
 
 def _encode_gemini(texts: list[str], task_type: str) -> np.ndarray:
@@ -87,11 +129,13 @@ def encode(texts: list[str], is_query: bool = False) -> np.ndarray:
         return np.zeros((0, dim()), dtype=np.float32)
     if _backend() == "bge":
         return _encode_bge(texts)
+    if _backend() == "st":
+        return _encode_st(texts, is_query)
     return _encode_gemini(texts, "RETRIEVAL_QUERY" if is_query else "RETRIEVAL_DOCUMENT")
 
 
 def is_ready() -> tuple[bool, str]:
-    if _backend() == "bge":
+    if _backend() in ("bge", "st"):
         return True, ""
     if not GEMINI_API_KEY:
         return False, "GEMINI_API_KEY 가 설정되지 않았습니다."
