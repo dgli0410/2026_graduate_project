@@ -25,3 +25,5 @@ Thumbs.db
 
 # 오피스가 파일을 열어두면 만드는 잠금 파일
 ~$*
+eval/*.bak
+eval/*.bak2

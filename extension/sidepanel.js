@@ -120,6 +120,8 @@ function showCapture(visible, ratio = 0, message = "") {
 }
 
 async function saveCurrent() {
+  // 리스너가 못 잡은 경우에도 엉뚱한 영상을 저장하지 않도록, 보내기 직전에 다시 읽습니다.
+  await refreshCurrentVideo();
   if (!currentInfo?.videoId) return;
   const videoId = currentInfo.videoId;
   const btn = $("save-btn");
@@ -869,6 +871,13 @@ function bindEvents() {
     return false;
   });
   chrome.tabs.onActivated.addListener(refreshCurrentVideo);
+  // 쇼츠는 스크롤만 해도 **같은 탭 안에서** 영상이 바뀝니다. onActivated(탭 전환)만
+  // 듣고 있으면 Side Panel 이 이전 영상 정보를 그대로 들고 있어, 저장 버튼이 엉뚱한
+  // video_id 를 보냅니다(이미 저장된 영상이면 "이미 저장된 영상입니다" 로 막힙니다).
+  // 유튜브는 History API 로 주소를 바꾸므로 onUpdated 의 changeInfo.url 로 잡힙니다.
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url && tab.active) refreshCurrentVideo();
+  });
 }
 
 (async function init() {

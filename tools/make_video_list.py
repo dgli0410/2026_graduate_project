@@ -21,16 +21,10 @@ from server.config import DB_PATH, MEDIA_DIR, ROOT
 MIN_COVERAGE = 85.0  # 캡처 커버율(%)이 이보다 낮으면 질문 대상에서 제외
 
 # 번호를 고정하기 위한 예약 자리.
-# 노션·시트에 이미 번호로 담당을 적어두었는데 중간 영상이 빠지면 뒤 번호가 전부 당겨져
-# 어긋납니다. 빠진 자리를 빈 줄로 남겨 번호를 유지합니다.
-#
-# 새 영상을 저장한 뒤 그 video_id 를 "replacement" 에 적으면 그 자리로 들어갑니다.
-RESERVED: dict[int, dict[str, str]] = {
-    5: {
-        "replacement": "",  # <- 교체할 새 영상의 video_id 를 여기에 넣으세요
-        "note": "uncSsiLbz1E 가 유튜브에서 삭제됨(2026-09-29 확인). 새 영상으로 교체 예정",
-    },
-}
+# 비워 두면 저장 순서대로 1번부터 빈틈없이 번호를 매깁니다.
+# 중간 영상이 삭제됐는데 노션·시트에 적어둔 번호를 지키고 싶을 때만 쓰세요.
+#   5: {"replacement": "새영상id", "note": "사유"}
+RESERVED: dict[int, dict[str, str]] = {}
 
 
 def coverage(user_id: str, video_id: str, duration: float) -> float:
