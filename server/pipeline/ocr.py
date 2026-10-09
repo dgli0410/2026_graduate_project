@@ -128,6 +128,18 @@ def _drop_static_overlays(per_frame: list[tuple[float, list[tuple]]]) -> list[tu
     ]
 
 
+def _load_image(path: Path):
+    """한글 경로에서도 읽히게 파일을 직접 디코딩합니다 (cv2.imread 우회)."""
+    import cv2
+    import numpy as np
+
+    data = np.fromfile(str(path), dtype=np.uint8)   # 경로 인코딩을 타지 않습니다
+    image = cv2.imdecode(data, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"이미지를 읽지 못했습니다: {path.name}")
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)   # EasyOCR 은 RGB 를 기대합니다
+
+
 def _recognize_easyocr(frames: list[tuple[float, Path]], counts: dict | None = None) -> list[dict]:
     global _reader
     import easyocr
@@ -146,7 +158,12 @@ def _recognize_easyocr(frames: list[tuple[float, Path]], counts: dict | None = N
         try:
             # detail=1 로 신뢰도와 위치를 함께 받습니다. detail=0 으로 글자만 받으면
             # 배경 무늬에서 나온 쓰레기("C다 'F60\" 1' ;;}")를 걸러낼 방법이 없습니다.
-            boxes = _reader.readtext(str(path))
+            # ⚠ 경로 문자열을 넘기면 안 됩니다. EasyOCR 은 내부에서 cv2.imread 를 쓰는데,
+            #   OpenCV 는 윈도우에서 한글이 든 경로를 열지 못하고 None 을 돌려줍니다.
+            #   그러면 'NoneType' object has no attribute 'shape' 로 **모든 프레임이 실패**합니다.
+            #   프로젝트 폴더 이름에 한글이 있으면 OCR 이 통째로 비는데 로그만 보면 알기 어렵습니다.
+            #   파일을 직접 읽어 배열로 넘기면 경로 인코딩과 무관해집니다.
+            boxes = _reader.readtext(_load_image(path))
         except Exception as exc:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다(실패 수는 셉니다)
             if counts is not None:
                 counts["failed_frames"] += 1
