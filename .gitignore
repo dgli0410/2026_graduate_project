@@ -27,3 +27,6 @@ Thumbs.db
 ~$*
 eval/*.bak
 eval/*.bak2
+
+# 평가셋 백업 (로컬 전용)
+eval/*.bak*
