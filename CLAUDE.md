@@ -9,6 +9,7 @@
 - `docs/mentor-feedback.md` — 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기**
 - `docs/search-logic.md` — 검색 코드가 실제로 어떻게 도는지 + 고쳐야 할 지점
 - `docs/eval-guide.md` — 질문셋·평가셋 만드는 법. 평가 작업을 도울 때 기준이 되는 문서
+- `docs/fixes-20261010.md` — 로컬 전환에서 조용히 틀리던 버그 3개(.env 빈 값 주석 / Qdrant 차원 / EasyOCR 한글 경로)와 첫 측정값
 - `server/config.py` — 모든 설정과 조건(condition) 정의가 여기 한 곳
 
 ## 환경
@@ -54,5 +55,7 @@ python -m tools.run_condition --list  # 조건·영상 목록
 - 음성은 로컬 faster-whisper 가 기본. 저장된 영상 5개(ready 4 / failed 1)
 - **다음 할 일은 9/18 멘토 자문 기준으로 재정렬했습니다 → `docs/mentor-feedback.md` 6장**
   1순위는 평가셋과 평가 스크립트입니다. 이게 없으면 검색을 고쳐도 좋아졌다고 말할 근거가 없습니다
-- 저장된 영상 15개(장면 카드 143개). 목록은 `eval/video_list.md` (5번 자리는 교체 예정으로 비어 있음)
+- 저장된 영상 18개(장면 카드 203개). 목록은 `eval/video_list.md`
+- 백엔드는 전부 로컬(faster-whisper / easyocr / bge 1024차원 / siglip). 장면 설명만 Gemini
+- 평가셋 질문 64개. 첫 측정 nDCG@5 = 0.751 (캡션 5개 누락 상태). 상세는 `docs/fixes-20261010.md`
 - 평가셋 라벨링 시트: `eval/labeling_sheet.xlsx` (`python -m tools.make_labeling_sheet --force` 로 갱신)
