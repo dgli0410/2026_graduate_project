@@ -20,6 +20,17 @@
 - **질문 유형별로 분리**해서 보고한다. 전체 평균 하나보다 유형 간 차이가 유용하다
 - 정답이 없는 질문(grade=없음)은 nDCG 가 정의되지 않는다(IDCG=0). 따로 뺀다 —
   멘토 자문 3번(관련 장면 없음)의 성능은 이 질문들에서만 의미가 있다
+
+**기준선에 대하여.** 멘토는 두 가지를 지목했다 — "제목·설명 기반 검색" 과 "음성 인식 단일
+신호". 둘 다 구현했지만 **제목 기준선은 이 평가 설계에서 성립하지 않는다.**
+
+평가셋은 질문마다 정답 영상이 정해져 있어 **그 영상 안에서만** 검색한다. 그런데 한 영상의
+장면 카드는 **제목이 전부 같다.** 제목만으로 순위를 매기면 모든 카드의 점수가 같아져
+재정렬이 일어나지 않고, 결과가 현행과 글자 그대로 동일해진다(실측 0.747 vs 0.747).
+
+제목이 변별력을 갖는 것은 **"어느 영상인지 찾기"**(영상 전체 검색)에서다. 그래서 기본
+비교에서는 빼고 `--with-title-baseline` 으로만 돌린다. 코드를 지우지 않는 이유는, 이것이
+"해보니 안 되더라" 가 아니라 **왜 안 되는지 아는 판단**임을 보고서에 적기 위해서다.
 """
 from __future__ import annotations
 
@@ -261,10 +272,19 @@ def agreement(path: Path) -> None:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="평가셋으로 검색 성능 측정")
+    p = argparse.ArgumentParser(
+        description="평가셋으로 검색 성능 측정",
+        epilog="제목·설명 기준선은 영상 내 검색에서 재정렬이 일어나지 않아 기본 비교에서 뺐습니다. "
+               "자세한 이유는 이 파일 맨 위 docstring 을 보세요.",
+    )
     p.add_argument("--labels", default=str(ROOT / "eval" / "labels_merged.csv"))
     p.add_argument("--baseline", choices=["title", "asr"], default=None)
-    p.add_argument("--all", action="store_true", help="현행 + 기준선 2종을 모두")
+    p.add_argument("--all", action="store_true", help="현행 + 음성 단일 신호 기준선")
+    p.add_argument(
+        "--with-title-baseline",
+        action="store_true",
+        help="제목·설명 기준선도 함께 (영상 내 검색에서는 의미가 없습니다 — 아래 설명)",
+    )
     p.add_argument("--out", default=None, help="결과를 JSON 으로 저장")
     args = p.parse_args()
 
@@ -287,7 +307,10 @@ def main() -> int:
         if len(skipped) > 8:
             print(f"    … 외 {len(skipped) - 8}개")
 
-    runs = [None, "title", "asr"] if args.all else [args.baseline]
+    if args.all:
+        runs = [None, "asr"] + (["title"] if args.with_title_baseline else [])
+    else:
+        runs = [args.baseline]
     results = [run(user_id, questions, b) for b in runs]
     for r in results:
         show(r)
