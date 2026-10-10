@@ -48,26 +48,82 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from server import db, embedder, image_embedder, vectors
+from contextlib import contextmanager, nullcontext
+
+from server import config, db, embedder, image_embedder, vectors
 from server.config import DB_PATH, QDRANT_COLLECTION, ROOT
 from server.pipeline.segmenter import search_text
 from tools import eval_search as ev
 from tools.reembed import encode_images, targets
 
-# (키, 쓰는 필드, 보여줄 이름, 답하는 질문)
-# 필드 이름은 장면 카드 JSON 의 키 그대로입니다.
-PLAN: list[tuple[str, tuple[str, ...], str, str]] = [
-    ("all",    ("asr_text", "ocr_text", "caption"), "음성+자막+설명",  "기준"),
-    ("no_cap", ("asr_text", "ocr_text"),            "음성+자막 (-설명)", "Gemini 없이 로컬만으로 되나"),
-    ("no_ocr", ("asr_text", "caption"),             "음성+설명 (-자막)", "EasyOCR 이 필요한가"),
-    ("no_asr", ("ocr_text", "caption"),             "자막+설명 (-음성)", "Whisper 가 필요한가"),
-    ("cap",    ("caption",),                        "설명만",           "Gemini 만으로 충분한가"),
-    ("ocr",    ("ocr_text",),                       "자막만",           ""),
-    ("asr",    ("asr_text",),                       "음성만",           ""),
+# 신호 4개. 조합은 2^4-1 = 15개뿐이라 전수로 돕니다.
+#   asr_text / ocr_text / caption 은 장면 카드의 글 필드 — 빈 문자열로 만들면 빠집니다.
+#   siglip 은 글이 아니라 **그림 좌표**라 빼는 방법이 다릅니다. 아래 no_siglip() 참고.
+SIGNALS: list[tuple[str, str]] = [
+    ("asr_text", "음성"),
+    ("ocr_text", "자막"),
+    ("caption", "설명"),
+    ("siglip", "그림"),
 ]
+TEXT_FIELDS = ("asr_text", "ocr_text", "caption")
 
-ALL_FIELDS = ("asr_text", "ocr_text", "caption")
+# 답을 보려고 이 실험을 하는 질문들. 해당 조건 줄에 붙여 보여줍니다.
+QUESTIONS: dict[tuple[str, ...], str] = {
+    ("asr_text", "ocr_text", "caption", "siglip"): "기준",
+    ("asr_text", "ocr_text", "siglip"): "Gemini 없이 로컬만으로 되나",
+    ("asr_text", "caption", "siglip"): "EasyOCR 이 필요한가",
+    ("ocr_text", "caption", "siglip"): "Whisper 가 필요한가",
+    ("asr_text", "ocr_text", "caption"): "SigLIP 이 필요한가",
+    ("caption", "siglip"): "Gemini 만으로 충분한가",
+    ("siglip",): "그림만으로 되나",
+}
+
+
+def build_plan() -> list[tuple[str, tuple[str, ...], str, str]]:
+    """(키, 쓰는 신호, 보여줄 이름, 답하는 질문). 신호 많은 것부터."""
+    keys = [k for k, _ in SIGNALS]
+    labels = dict(SIGNALS)
+    out = []
+    for mask in range(1, 1 << len(keys)):
+        use = tuple(k for i, k in enumerate(keys) if mask >> i & 1)
+        out.append((
+            "_".join(k.replace("_text", "") for k in use),
+            use,
+            "+".join(labels[k] for k in use),
+            QUESTIONS.get(use, ""),
+        ))
+    out.sort(key=lambda r: (-len(r[1]), [keys.index(k) for k in r[1]]))
+    return out
+
+
+PLAN = build_plan()
+ALL_FIELDS = TEXT_FIELDS
 METRICS = ("ndcg", "recall", "ap", "hit1")
+
+
+@contextmanager
+def no_siglip():
+    """이 블록 안에서만 그림 좌표를 끕니다.
+
+    `config.backend("image_embed")` 가 ContextVar 를 읽으므로, 그 값을 "none" 으로
+    덮으면 `image_embedder.is_enabled()` 가 False 가 됩니다. 그러면
+    - `ensure_collection()` 이 그림 벡터 없이 창고를 만들고
+    - `hybrid_search()` 가 `has_image_vector()` 를 보고 그림 검색을 건너뜁니다.
+
+    가중치는 재정규화되지 않지만 순위는 같습니다 — 모든 후보의 그림 점수가 0 이라
+    w_image 몫이 전부에게 똑같이 빠지고, 남은 둘을 상수로 나누는 것은 순서를
+    바꾸지 않기 때문입니다.
+
+    ⚠ `use_condition()` 을 쓰지 않는 이유: 그것은 CONDITIONS 에 등록된 이름만 받는데,
+      그림만 끄는 조건은 등록돼 있지 않습니다. 가장 가까운 "gemini" 조건은 글 좌표까지
+      768차원으로 바꿔버려 쓸 수 없습니다. 제품 코드는 건드리지 않고 같은 ContextVar 만
+      직접 씁니다.
+    """
+    token = config._active_backends.set({"image_embed": "none"})
+    try:
+        yield
+    finally:
+        config._active_backends.reset(token)
 
 
 def condition_of(key: str) -> str:
@@ -94,22 +150,29 @@ def build(plan_rows: list[tuple], image_cache: dict[str, Any]) -> None:
     """7개 조건의 창고를 만듭니다. 프레임 인코딩은 첫 조건에서만 돌고 뒤는 재사용합니다."""
     client = vectors.get_client()
     for key, keep, label, _ in PLAN:
+        use_siglip = "siglip" in keep
         name = collection_of(key)
         if client.collection_exists(name):
             client.delete_collection(name)
-        vectors.ensure_collection(condition_of(key))
 
-        started, cards = time.time(), 0
-        for user_id, video_id, title, segments in plan_rows:
-            trimmed = [strip_fields(s, keep) for s in segments]
-            text_vectors = embedder.encode([search_text(s, title=title) for s in trimmed])
-            if video_id not in image_cache:
-                image_cache[video_id] = encode_images(user_id, video_id, segments)
-            vectors.upsert_segments(
-                user_id, video_id, title, trimmed,
-                text_vectors, image_cache[video_id], condition_of(key),
-            )
-            cards += len(segments)
+        # 그림을 쓰지 않는 조건은 창고부터 그림 벡터 없이 만듭니다.
+        with nullcontext() if use_siglip else no_siglip():
+            vectors.ensure_collection(condition_of(key))
+
+            started, cards = time.time(), 0
+            for user_id, video_id, title, segments in plan_rows:
+                trimmed = [strip_fields(s, keep) for s in segments]
+                text_vectors = embedder.encode([search_text(s, title=title) for s in trimmed])
+                images = None
+                if use_siglip:
+                    if video_id not in image_cache:
+                        image_cache[video_id] = encode_images(user_id, video_id, segments)
+                    images = image_cache[video_id]
+                vectors.upsert_segments(
+                    user_id, video_id, title, trimmed,
+                    text_vectors, images, condition_of(key),
+                )
+                cards += len(segments)
         print(f"  [{label}] 장면 {cards}개 색인  {time.time() - started:.0f}초")
 
 
@@ -127,25 +190,32 @@ def ask(user_id: str, question: ev.Question, key: str) -> list[dict[str, Any]]:
     return result["scenes"][: ev.TOP_K]
 
 
+def keep_of(key: str) -> tuple[str, ...]:
+    return next(k for code, k, _, _ in PLAN if code == key)
+
+
 def measure(user_id: str, questions: list[ev.Question], key: str, label: str) -> dict[str, Any]:
     answered = [q for q in questions if q.spans]
     empty = [q for q in questions if q.no_answer and not q.spans]
+    # 색인할 때와 같은 상태로 검색해야 합니다. 그림을 끄고 만든 창고를 그림 켠 채로
+    # 검색하면 `has_image_vector()` 가 False 라 결과는 같지만, 상태를 맞춰 둡니다.
+    scope = nullcontext() if "siglip" in keep_of(key) else no_siglip()
 
     per_type: dict[str, list[dict]] = defaultdict(list)
     rows = []
-    for q in answered:
+    with scope:
+      for q in answered:
         s = ev.score(q, ask(user_id, q, key))
         per_type[q.q_type].append(s)
-        # ⚠ 문항별로 남깁니다. 조건별 평균만 보면 "설명만" 이 낮은 것이 설명이 쓸모없어서인지
-        #   그 영상에 설명이 애초에 없어서인지 구분할 수 없습니다. 48문항 중 17개가
-        #   설명이 0개인 영상에 붙어 있어, 나중에 잘라 보려면 원자료가 필요합니다.
+        # ⚠ 문항별로 남깁니다. 조건별 평균만 보면 어떤 조건이 낮은 것이 그 신호가
+        #   쓸모없어서인지 그 영상에 애초에 없어서인지 구분할 수 없습니다.
         rows.append({"qid": q.qid, "video_id": q.video_id, "q_type": q.q_type, **s})
-
-    returned = sum(1 for q in empty if ask(user_id, q, key))
+      returned = sum(1 for q in empty if ask(user_id, q, key))
     overall = [s for lst in per_type.values() for s in lst]
     return {
         "key": key,
         "label": label,
+        "why": next((q for code, _, _, q in PLAN if code == key), ""),
         "questions": len(answered),
         "rows": rows,
         "overall": {m: ev.mean([s[m] for s in overall]) for m in METRICS},
@@ -159,34 +229,28 @@ def measure(user_id: str, questions: list[ev.Question], key: str, label: str) ->
 
 
 def show(results: list[dict[str, Any]]) -> None:
-    base = next(r for r in results if r["key"] == "all")
+    base = results[0]          # 신호 전부 — PLAN 이 신호 많은 것부터 정렬돼 있습니다
     w = max(len(r["label"]) for r in results) + 2
+    qw = max((len(r["why"]) for r in results), default=0) + 2
 
-    print("\n" + "=" * 76)
-    print("제거법 결과 — 무엇을 빼면 얼마나 떨어지는가")
-    print("=" * 76)
-    print(f"{'#':<3}{'조건':<{w}}{'nDCG@5':>9}{'기준대비':>10}{'Recall@5':>10}{'1위적중':>9}")
-    print("-" * 76)
+    print(chr(10) + "=" * 78)
+    print("제거법 — 신호 4개 전수 조합 (2^4-1 = 15)")
+    print("=" * 78)
+    print(f"{'#':<3}{'조건':<{w}}{'nDCG@5':>9}{'기준대비':>10}   {'답하는 질문':<{qw}}")
+    print("-" * 78)
     for i, r in enumerate(results, start=1):
         o = r["overall"]
-        gap = "" if r["key"] == "all" else f"{o['ndcg'] - base['overall']['ndcg']:+.3f}"
-        print(f"{i:<3}{r['label']:<{w}}{o['ndcg']:>9.3f}{gap:>10}"
-              f"{o['recall']:>10.3f}{o['hit1']:>9.3f}")
+        gap = "" if i == 1 else f"{o['ndcg'] - base['overall']['ndcg']:+.3f}"
+        print(f"{i:<3}{r['label']:<{w}}{o['ndcg']:>9.3f}{gap:>10}   {r['why']:<{qw}}")
 
-    print(f"\n{'유형별 nDCG@5':<{w + 3}}" + "".join(f"{t:>12}" for t in ev.TYPES))
-    print("-" * 76)
+    print(chr(10) + f"{'유형별 nDCG@5':<{w + 3}}" + "".join(f"{t:>12}" for t in ev.TYPES))
+    print("-" * 78)
     for i, r in enumerate(results, start=1):
         cells = "".join(
             f"{r['by_type'][t]['ndcg']:>12.3f}" if t in r["by_type"] else f"{'-':>12}"
             for t in ev.TYPES
         )
         print(f"{i:<3}{r['label']:<{w}}{cells}")
-
-    print("\n정답 없는 질문에 그래도 답한 비율 (자문 3번 — 낮을수록 좋음)")
-    print("-" * 76)
-    for i, r in enumerate(results, start=1):
-        na = r["no_answer"]
-        print(f"{i:<3}{r['label']:<{w}}{na['returned_anyway']}/{na['n']}")
 
 
 # --- 실행 ------------------------------------------------------------------
