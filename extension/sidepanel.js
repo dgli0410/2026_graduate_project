@@ -6,6 +6,7 @@ let currentInfo = null;
 let playlists = [];
 let selectedPlaylist = "";
 let pollTimer = null;
+let serverHealth = null;
 
 // --- 기본 도구 -------------------------------------------------------------
 
@@ -448,6 +449,119 @@ async function runSearch() {
   }
 }
 
+// --- 재료 → 구매 링크 ------------------------------------------------------
+
+function openTab(url) {
+  chrome.tabs.create({ url });
+}
+
+// 기본: API 없이 검색 URL 조합. 고급: 서버에 네이버 키가 있으면 최저가를 붙입니다.
+function ingredientRow(name) {
+  const row = document.createElement("div");
+  row.className = "ing";
+
+  const label = document.createElement("span");
+  label.className = "ing-name";
+  label.textContent = name;
+  row.appendChild(label);
+
+  const price = document.createElement("a");
+  price.className = "ing-price hidden";
+  row.appendChild(price);
+
+  const coupang = document.createElement("button");
+  coupang.className = "shop-btn";
+  coupang.textContent = "쿠팡";
+  coupang.addEventListener("click", () =>
+    openTab(`https://www.coupang.com/np/search?q=${encodeURIComponent(name)}`)
+  );
+  row.appendChild(coupang);
+
+  const naver = document.createElement("button");
+  naver.className = "shop-btn";
+  naver.textContent = "N쇼핑";
+  naver.addEventListener("click", () =>
+    openTab(`https://search.shopping.naver.com/search/all?query=${encodeURIComponent(name)}`)
+  );
+  row.appendChild(naver);
+
+  if (serverHealth?.shopping_price_enabled) {
+    api(`/api/shopping?query=${encodeURIComponent(name)}`)
+      .then((data) => {
+        const item = data.items?.[0];
+        if (!item || !item.price) return;
+        price.textContent = `최저 ${item.price.toLocaleString("ko-KR")}원`;
+        price.title = `${item.title} · ${item.mall}`;
+        price.href = "#";
+        price.addEventListener("click", (e) => {
+          e.preventDefault();
+          openTab(item.link);
+        });
+        price.classList.remove("hidden");
+      })
+      .catch(() => {}); // 가격은 덤입니다. 실패해도 링크는 그대로 씁니다.
+  }
+  return row;
+}
+
+// --- 사진 레시피 -----------------------------------------------------------
+
+// 단계 시각(step.time)이 속한 장면 카드를 찾습니다. 걸치는 카드가 없으면 가장 가까운 것.
+function segmentAt(segments, time) {
+  let best = null;
+  let bestDist = Infinity;
+  for (const seg of segments || []) {
+    if (time >= seg.start_time && time < seg.end_time) return seg;
+    const dist = Math.abs(seg.start_time - time);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = seg;
+    }
+  }
+  return best;
+}
+
+function recipeStepCard(videoId, step, index, segment) {
+  const card = document.createElement("div");
+  card.className = "recipe-step";
+
+  const no = document.createElement("span");
+  no.className = "recipe-no";
+  no.textContent = index + 1;
+  card.appendChild(no);
+
+  if (segment?.frame_url) {
+    const img = document.createElement("img");
+    img.className = "recipe-frame";
+    img.src = `${API_BASE}${segment.frame_url}?u=${encodeURIComponent(userId)}`;
+    img.alt = "";
+    card.appendChild(img);
+  }
+
+  const main = document.createElement("div");
+  main.className = "recipe-main";
+
+  const label = document.createElement("div");
+  label.className = "recipe-label";
+  label.textContent = step.label;
+  main.appendChild(label);
+
+  const jump = document.createElement("button");
+  jump.className = "time-btn small";
+  jump.textContent = `▶ ${fmtTime(step.time)}`;
+  jump.addEventListener("click", () =>
+    jumpTo(
+      videoId,
+      Math.max(0, step.time - 1.5),
+      `https://www.youtube.com/watch?v=${videoId}&t=${Math.max(0, Math.floor(step.time - 1.5))}s`
+    )
+  );
+  main.appendChild(jump);
+
+  card.appendChild(main);
+  return card;
+}
+
 // --- 비교 탭 ---------------------------------------------------------------
 // 같은 프레임·오디오를 다른 백엔드로 돌린 결과를 나란히 봅니다.
 // 보관함/검색 탭이 쓰는 기본 조건 데이터는 건드리지 않습니다.
@@ -729,27 +843,25 @@ async function openDetail(videoId) {
         body.appendChild(wrap);
       }
 
+      if (video.summary.ingredients?.length) {
+        const heading = document.createElement("h3");
+        heading.textContent = "재료 · 구매 링크";
+        body.appendChild(heading);
+        const list = document.createElement("div");
+        list.className = "ings";
+        video.summary.ingredients.forEach((name) => list.appendChild(ingredientRow(name)));
+        body.appendChild(list);
+      }
+
       if (video.summary.steps?.length) {
         const heading = document.createElement("h3");
-        heading.textContent = "주요 단계";
+        heading.textContent = "사진 레시피";
         body.appendChild(heading);
-        const list = document.createElement("ul");
-        list.className = "steps";
-        video.summary.steps.forEach((step) => {
-          const li = document.createElement("li");
-          const button = document.createElement("button");
-          button.className = "time-btn small";
-          button.textContent = fmtTime(step.time);
-          button.addEventListener("click", () =>
-            jumpTo(
-              videoId,
-              Math.max(0, step.time - 1.5),
-              `https://www.youtube.com/watch?v=${videoId}&t=${Math.max(0, Math.floor(step.time - 1.5))}s`
-            )
-          );
-          li.appendChild(button);
-          li.appendChild(document.createTextNode(step.label));
-          list.appendChild(li);
+        const list = document.createElement("div");
+        list.className = "recipe";
+        video.summary.steps.forEach((step, index) => {
+          const segment = segmentAt(video.segments, step.time);
+          list.appendChild(recipeStepCard(videoId, step, index, segment));
         });
         body.appendChild(list);
       }
@@ -814,6 +926,7 @@ async function checkServer() {
   const pill = $("server-state");
   try {
     const health = await api("/api/health");
+    serverHealth = health;
     const b = health.backends;
     pill.textContent = health.ok
       ? `${health.device} · 음성 ${b.asr} · 자막 ${b.ocr}${health.image_search_enabled ? " · 그림검색" : ""}`
@@ -857,9 +970,14 @@ function bindEvents() {
     });
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
-    // 쇼츠를 스크롤로 넘겼을 때
-    if (message?.type === "SHORTS_CHANGED") setCurrentInfo(message.info);
+  chrome.runtime.onMessage.addListener((message, sender) => {
+    // 쇼츠를 스크롤로 넘겼을 때 — 지금 실제로 보고 있는 탭에서 온 알림만 반영합니다.
+    // (여러 유튜브 탭이 열려 있으면 백그라운드 탭도 이 메시지를 보낼 수 있습니다.)
+    if (message?.type === "SHORTS_CHANGED") {
+      activeYoutubeTab().then((tab) => {
+        if (tab && sender.tab && tab.id === sender.tab.id) setCurrentInfo(message.info);
+      });
+    }
     // 추출 진행률
     if (message?.type === "CAPTURE_PROGRESS") {
       const label =

@@ -38,6 +38,15 @@ function activeReel() {
     const reel = v.closest("ytd-reel-video-renderer");
     if (reel) return reel;
   }
+
+  // 그래도 못 찾으면 화면 세로 중앙을 지나는 쇼츠 칸을 고릅니다.
+  // #shorts-player 나 document 로 넘어가지 않습니다 — 미리 로드된 다른 쇼츠의 제목을 집습니다.
+  const center = window.innerHeight / 2;
+  const centered = Array.from(document.querySelectorAll("ytd-reel-video-renderer")).find((r) => {
+    const rect = r.getBoundingClientRect();
+    return rect.top <= center && rect.bottom >= center;
+  });
+  if (centered) return centered;
   return null; // 못 찾으면 null. 부르는 쪽이 document.title 로 넘어갑니다.
 }
 
@@ -59,8 +68,9 @@ function activeVideoElement() {
 }
 
 function textOf(root, selectors) {
+  if (!root || !root.querySelector) return "";
   for (const sel of selectors) {
-    const el = root.querySelector ? root.querySelector(sel) : null;
+    const el = root.querySelector(sel);
     const text = el && (el.textContent || "").trim();
     if (text) return text;
   }
@@ -106,7 +116,7 @@ function readVideoInfo() {
 
   return {
     videoId,
-    title: cleanTitle(title).slice(0, 200),
+    title: title.slice(0, 200),
     channel: channel.slice(0, 100),
     duration: Math.round(duration * 100) / 100,
     isShorts: location.pathname.startsWith("/shorts/"),
@@ -337,15 +347,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
 // --- 쇼츠 전환 감지 --------------------------------------------------------
 // 스크롤로 다음 쇼츠로 넘어가도 페이지가 새로 열리지 않으므로 직접 감지합니다.
-let lastVideoId = currentVideoId();
+let lastSent = null;
+
+function sameInfo(a, b) {
+  if (!a || !b) return a === b;
+  return (
+    a.videoId === b.videoId &&
+    a.title === b.title &&
+    a.channel === b.channel &&
+    a.duration === b.duration
+  );
+}
 
 function notifyIfChanged() {
   if (capturing) return; // 추출 중에는 흔들지 않습니다
-  const id = currentVideoId();
-  if (id && id !== lastVideoId) {
-    lastVideoId = id;
-    const info = readVideoInfo();
-    if (info) chrome.runtime.sendMessage({ type: "SHORTS_CHANGED", info }).catch(() => {});
+  if (document.hidden) return; // 지금 보이지 않는(백그라운드) 탭은 방송하지 않습니다
+  const info = readVideoInfo();
+  if (!info) return;
+  // videoId 만 비교하면 안 됩니다: URL 은 먼저 바뀌어도 제목·채널 DOM(is-active reel)은
+  // 전환 애니메이션이 끝난 뒤 늦게 채워집니다. 그 사이에 한 번만 읽고 끝내면 빈 값이나
+  // 이전 영상 정보가 영구히 고정됩니다. 그래서 매번 다시 읽어 "내용이 실제로 달라졌을
+  // 때"만 보내고, 다음 폴링에서 DOM 이 정정되면 스스로 다시 보내 고쳐지게 합니다.
+  if (!sameInfo(info, lastSent)) {
+    lastSent = info;
+    chrome.runtime.sendMessage({ type: "SHORTS_CHANGED", info }).catch(() => {});
   }
 }
 
