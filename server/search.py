@@ -9,11 +9,17 @@
 """
 from __future__ import annotations
 
+import math
 import re
 from typing import Any
 
 from server import db, embedder, image_embedder, vectors
-from server.config import ANSWER_MODEL, DEDUP_OVERLAP_SECONDS, SEEK_LEAD_SECONDS
+from server.config import (
+    ANSWER_MODEL,
+    DEDUP_OVERLAP_SECONDS,
+    LEXICAL_IDF,
+    SEEK_LEAD_SECONDS,
+)
 
 # (글 좌표, 정확한 단어, 그림 좌표)
 WEIGHTS: dict[str, tuple[float, float, float]] = {
@@ -81,14 +87,79 @@ def payload_text(hit: dict[str, Any]) -> str:
     )
 
 
-def lexical_score(query: str, hit: dict[str, Any]) -> float:
-    """정확한 단어가 실제로 들어 있는지. 숫자·고유명사에 특히 중요합니다."""
+# --- IDF (역문서빈도) -----------------------------------------------------
+# 흔한 단어는 덜, 드문 단어는 더 쳐줍니다. 이게 없으면 거의 모든 카드에 나오는
+# "장면" 이 "청양고추" 와 같은 무게를 갖고, 흔한 단어만 남은 질의에서 이 채널이
+# 순위를 노이즈로 흔듭니다.
+#
+# 문서 = 장면 카드 하나. 코퍼스는 그 사용자의 카드 전부입니다.
+# df 를 토큰 일치가 아니라 **부분 문자열 포함**으로 세는 이유: lexical_score 가
+# `token in text` 로 채점하므로, 통계도 같은 방식이어야 합니다.
+
+_corpus: dict[str, tuple[int, list[str]]] = {}  # user_id -> (카드 수, 문서들)
+_df: dict[str, dict[str, int]] = {}  # user_id -> {단어: 그 단어가 든 카드 수}
+
+
+def _corpus_for(user_id: str) -> list[str]:
+    """카드 수가 달라졌으면 다시 읽습니다(저장·삭제 반영)."""
+    n = db.count_segments(user_id)
+    cached = _corpus.get(user_id)
+    if cached is None or cached[0] != n:
+        _corpus[user_id] = (n, db.all_segment_texts(user_id))
+        _df.pop(user_id, None)
+    return _corpus[user_id][1]
+
+
+def idf_weights(user_id: str, tokens: list[str]) -> dict[str, float]:
+    """질의 단어별 IDF. 코퍼스가 비었으면 {} 를 돌려 예전 방식으로 떨어집니다.
+
+        idf = log( (N+1) / (df+1) )
+
+    모든 카드에 나오는 단어는 0 이 되어 점수에 전혀 기여하지 않습니다.
+    코퍼스에 없는 단어는 가장 드문 단어와 같은 무게로 봅니다(df=1).
+    """
+    texts = _corpus_for(user_id)
+    total = len(texts)
+    if not total:
+        return {}
+    seen = _df.setdefault(user_id, {})
+    weights: dict[str, float] = {}
+    for token in tokens:
+        if token not in seen:
+            seen[token] = sum(1 for text in texts if token in text)
+        # 코퍼스에 한 번도 안 나오는 단어는 **어느 후보도 맞힐 수 없습니다.**
+        # 그런데 df=0 이면 IDF 가 최대가 되어, 분모만 키우고 분자에는 못 들어가
+        # 질의 전체의 단어 점수를 깎습니다. 증거가 될 수 없는 단어는 빼야 합니다.
+        # 실측: "두부 깍둑썰기 하는 장면" 에서 '깍둑썰기'·'장면' 이 코퍼스에 없어
+        # '두부' 가 맞았는데도 0.251 로 떨어졌습니다(빼면 1.000).
+        if seen[token] == 0:
+            continue
+        weights[token] = math.log((total + 1) / (seen[token] + 1))
+    return weights
+
+
+def lexical_score(
+    query: str, hit: dict[str, Any], weights: dict[str, float] | None = None
+) -> float:
+    """정확한 단어가 실제로 들어 있는지. 숫자·고유명사에 특히 중요합니다.
+
+    weights 가 있으면 IDF 가중 비율, 없으면 예전의 단순 포함 비율입니다.
+    둘 다 0~1 이라 뒤의 가중합은 그대로 둡니다.
+    """
     tokens = TOKEN_RE.findall(query)
     if not tokens:
         return 0.0
     text = payload_text(hit)
-    matched = sum(1 for token in tokens if token in text)
-    return matched / len(tokens)
+    if not weights:
+        matched = sum(1 for token in tokens if token in text)
+        return matched / len(tokens)
+
+    denom = sum(weights.get(token, 0.0) for token in tokens)
+    if denom <= 0:
+        # 질의가 전부 흔한 단어입니다. 이 채널은 할 말이 없습니다.
+        return 0.0
+    got = sum(weights.get(token, 0.0) for token in tokens if token in text)
+    return got / denom
 
 
 def _merge(pools: list[list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
@@ -144,13 +215,16 @@ def hybrid_search(
         )
     )
 
+    # 질의 단어별 IDF 는 후보마다가 아니라 검색당 한 번만 계산합니다.
+    idf = idf_weights(user_id, TOKEN_RE.findall(query)) if LEXICAL_IDF else {}
+
     merged = _merge([text_hits, image_hits])
     ranked: list[dict[str, Any]] = []
     for hit in merged.values():
         seg = hit.get("segment_id")
         dense = text_scores.get(seg, 0.0)
         image = image_scores.get(seg, 0.0)
-        lexical = lexical_score(query, hit)
+        lexical = lexical_score(query, hit, idf)
         hit["score_dense"] = round(dense, 4)
         hit["score_lexical"] = round(lexical, 4)
         hit["score_image"] = round(image, 4)
@@ -166,15 +240,27 @@ def hybrid_search(
 def dedup_adjacent(
     hits: list[dict[str, Any]], top_k: int, overlap: float = DEDUP_OVERLAP_SECONDS
 ) -> list[dict[str, Any]]:
-    """같은 영상에서 시간이 겹치는 장면은 하나만 남깁니다."""
+    """같은 영상에서 **실제로 겹치는** 장면은 하나만 남깁니다.
+
+    ⚠ 예전 조건은 `start <= 상대end + overlap and end >= 상대start - overlap` 이었습니다.
+      장면 카드는 4초씩 맞닿아 있어(0~4, 4~8, 8~12 …) 겹치는 구간이 0초인데도,
+      앞뒤 2초 여유 때문에 **맞닿은 카드가 전부 중복으로 걸렸습니다.**
+      결과적으로 상위 카드의 양 옆이 항상 지워져, 정답이 카드 경계에 걸치면
+      그 옆 카드를 영영 보여줄 수 없었습니다.
+      실측: 카드 5개짜리 영상에서 top_k=5 인데 결과가 3개만 나왔습니다
+      (8~12 를 남기고 4~8 과 12~16 이 지워짐).
+
+      이제는 겹친 길이를 재서 overlap 초 이상일 때만 중복으로 봅니다.
+      맞닿은 카드는 겹친 길이가 0 이므로 둘 다 남습니다.
+    """
     kept: list[dict[str, Any]] = []
     for hit in hits:
         vid = hit.get("video_id")
         start, end = float(hit.get("start_time", 0)), float(hit.get("end_time", 0))
         duplicate = any(
             k.get("video_id") == vid
-            and start <= float(k.get("end_time", 0)) + overlap
-            and end >= float(k.get("start_time", 0)) - overlap
+            and min(end, float(k.get("end_time", 0))) - max(start, float(k.get("start_time", 0)))
+            >= overlap
             for k in kept
         )
         if not duplicate:

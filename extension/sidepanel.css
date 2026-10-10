@@ -126,6 +126,9 @@ td.win { color: var(--ok); font-weight: 700; }
 .steps li { display: flex; gap: 8px; align-items: center; }
 .kw { display: inline-block; font-size: 11px; padding: 2px 7px; border-radius: 999px; background: var(--card); border: 1px solid var(--line); margin: 0 4px 4px 0; }
 
+/* 분석 일부 실패 경고 */
+.warn { margin-top: 4px; font-size: 11px; color: var(--danger); }
+
 /* 재료 → 구매 링크 */
 .ings { display: flex; flex-direction: column; gap: 6px; }
 .ing { display: flex; align-items: center; gap: 6px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--card); flex-wrap: wrap; }

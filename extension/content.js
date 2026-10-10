@@ -17,36 +17,46 @@ function currentVideoId() {
   return url.searchParams.get("v");
 }
 
+function visibleVideos() {
+  return Array.from(document.querySelectorAll("video")).filter((v) => {
+    const r = v.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
+  });
+}
+
 function activeReel() {
-  // 쇼츠는 여러 개(이전/다음 포함)가 DOM 에 동시에 존재합니다. 지금 보이는 것만 골라야 합니다.
-  // is-active 갱신이 늦거나 빠질 때 #shorts-player/document 로 넘어가면, 그 안에 있는
-  // #channel-name·#text-container 같은 흔한 선택자가 다른(preload 된) reel 의 것과
-  // 매칭되어 제목·채널이 뒤바뀔 수 있습니다. 그래서 반드시 "지금 화면 중앙에 보이는"
-  // reel 하나로 좁혀서 반환합니다. 못 찾으면 null 을 반환해 잘못된 텍스트를 긁지 않습니다.
+  // 쇼츠는 여러 개가 DOM 에 동시에 존재합니다. 지금 보이는 것만 골라야 합니다.
   const marked = document.querySelector("ytd-reel-video-renderer[is-active]");
   if (marked) return marked;
 
-  const reels = Array.from(document.querySelectorAll("ytd-reel-video-renderer"));
+  // ⚠ 유튜브가 쇼츠 DOM 을 바꾸면 위 선택자가 빗나갑니다. 예전에는 그때
+  //   #shorts-player 나 document 로 떨어졌는데, 그러면 textOf 가 문서 전체의
+  //   "첫 번째" 쇼츠 제목을 집어서 제목이 처음 본 영상으로 고정됐습니다.
+  //   video_id 는 URL 에서 읽으므로 멀쩡해 알아채기 어려운 버그였습니다.
+  //   그래서 화면에 실제로 보이는 video 에서 컨테이너를 거슬러 올라갑니다.
+  for (const v of visibleVideos()) {
+    const reel = v.closest("ytd-reel-video-renderer");
+    if (reel) return reel;
+  }
+
+  // 그래도 못 찾으면 화면 세로 중앙을 지나는 쇼츠 칸을 고릅니다.
+  // #shorts-player 나 document 로 넘어가지 않습니다 — 미리 로드된 다른 쇼츠의 제목을 집습니다.
   const center = window.innerHeight / 2;
-  const visible = reels.find((r) => {
+  const centered = Array.from(document.querySelectorAll("ytd-reel-video-renderer")).find((r) => {
     const rect = r.getBoundingClientRect();
     return rect.top <= center && rect.bottom >= center;
   });
-  if (visible) return visible;
-
-  return document.querySelector("#shorts-player") || null;
+  if (centered) return centered;
+  return null; // 못 찾으면 null. 부르는 쪽이 document.title 로 넘어갑니다.
 }
 
 function activeVideoElement() {
   const scope = activeReel();
-  const scoped = scope && scope.querySelector && scope.querySelector("video");
+  const scoped = scope && scope.querySelector ? scope.querySelector("video") : null;
   if (scoped && scoped.readyState >= 2) return scoped;
 
   const videos = Array.from(document.querySelectorAll("video"));
-  const visible = videos.filter((v) => {
-    const r = v.getBoundingClientRect();
-    return r.width > 0 && r.height > 0 && r.top < window.innerHeight && r.bottom > 0;
-  });
+  const visible = visibleVideos();
   // 스크롤 시 요소가 교체되므로 readyState 를 확인하고 접근합니다.
   return (
     visible.find((v) => v.readyState >= 2 && !v.paused) ||
@@ -80,25 +90,26 @@ function readVideoInfo() {
   if (!videoId) return null;
 
   const reel = activeReel();
-  // ⚠ reel 스코프 밖(document 전체)으로 눈을 돌리면, 미리 로드된 다른 쇼츠의 제목·채널이
-  // #channel-name 같은 흔한 선택자에 걸려 뒤바뀔 수 있습니다. reel 을 못 찾았을 때는
-  // 잘못된 값을 긁어오는 대신 빈 값으로 둡니다(화면엔 videoId 로 대체 표시됩니다).
-  const title = cleanTitle(
-    textOf(reel, [
-      "yt-shorts-video-title-view-model h2",
-      "yt-shorts-video-title-view-model",
-      ".ytShortsVideoTitleViewModelShortsVideoTitle",
-      "h2.title",
-      "#title h2",
-      ".ytd-reel-player-header-renderer #video-title",
-    ])
-  );
+  const title =
+    (reel
+      ? textOf(reel, [
+          "yt-shorts-video-title-view-model h2",
+          "yt-shorts-video-title-view-model",
+          ".ytShortsVideoTitleViewModelShortsVideoTitle",
+          "h2.title",
+          "#title h2",
+          ".ytd-reel-player-header-renderer #video-title",
+        ])
+      : "") ||
+    // 쇼츠를 넘기면 같이 바뀌므로, 문서 전체를 뒤지는 선택자보다 믿을 만합니다.
+    cleanTitle(document.title) ||
+    textOf(document, ["h1.ytd-watch-metadata", "#title h1", "meta[name='title']"]);
 
-  const channel = textOf(reel, [
-    "#channel-name a",
-    "yt-reel-channel-bar-view-model a",
-    "#text-container",
-  ]);
+  const channel =
+    (reel
+      ? textOf(reel, ["#channel-name a", "yt-reel-channel-bar-view-model a", "#text-container"])
+      : "") ||
+    textOf(document, ["#owner #channel-name a", "ytd-channel-name a"]);
 
   const video = activeVideoElement();
   const duration = video && isFinite(video.duration) ? video.duration : 0;

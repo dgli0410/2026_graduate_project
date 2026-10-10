@@ -10,11 +10,20 @@
 """
 from __future__ import annotations
 
+import re
+from collections import Counter
+from difflib import SequenceMatcher
 from pathlib import Path
 
 from server.config import backend
+from server.model_lock import MODEL_LOCK
 
 _reader = None
+
+# 이 아래는 배경 무늬·로고 조각이 대부분입니다. 실측 쓰레기 예: "C다 'F60\" 1' ;;} S다a"
+# 0.5 로 잡으면 작은 한글 자막까지 날아갑니다(실측: 된장찌개 영상의 "양파 반 개",
+# "파 1/2대", "청고추 2개" 가 전부 사라졌습니다). 낮게 잡고 내용으로 거릅니다.
+MIN_CONFIDENCE = 0.35
 
 
 def uses_grid() -> bool:
@@ -29,27 +38,159 @@ def recognize_all(frames: list[tuple[float, Path]]) -> list[dict]:
     """
     if uses_grid():
         return []
-    return _recognize_easyocr(frames)
+    return recognize_all_counted(frames)[0]
 
 
-def _recognize_easyocr(frames: list[tuple[float, Path]]) -> list[dict]:
+class OcrFailed(RuntimeError):
+    """모든 프레임에서 글자 읽기가 실패함. '자막이 없는 영상'과 구분하려고 따로 둡니다."""
+
+    error_code = "OCR_FAILED"
+
+
+def recognize_all_counted(frames: list[tuple[float, Path]]) -> tuple[list[dict], dict]:
+    """recognize_all 과 같고, 실패한 프레임 수와 첫 오류를 함께 돌려줍니다.
+
+    모든 프레임이 실패하면 OcrFailed 를 던집니다. 일부만 실패하면 결과는 쓰고 그 사실을 남깁니다.
+    """
+    counts: dict = {"frames": len(frames), "failed_frames": 0, "first_error": None}
+    if uses_grid():
+        return [], counts
+    results = _recognize_easyocr(frames, counts)
+    if frames and counts["failed_frames"] == len(frames):
+        raise OcrFailed(f"프레임 {len(frames)}장 모두 글자 읽기에 실패했습니다: {counts['first_error']}")
+    return results, counts
+
+
+def _normalize(text: str) -> str:
+    """비교용 열쇠. 오인식으로 끼어든 기호·공백 차이를 무시합니다."""
+    return re.sub(r"[^0-9a-z가-힣]", "", str(text).lower())
+
+
+def _is_meaningful(key: str) -> bool:
+    """글자처럼 생겼는지. 신뢰도만으로는 로고 파편이 안 걸러집니다.
+
+    실측: 채널 로고가 잘려 "jc", "jic", "ral", "e3" 로 읽히며 카드마다 남았습니다.
+    한글이 하나도 없고 숫자도 없는 짧은 라틴 문자열은 자막일 수 없습니다.
+    "600ml", "350ml" 같은 분량 표기는 숫자가 있어 통과합니다.
+    """
+    if len(key) < 2:
+        return False
+    if re.search(r"[가-힣]", key):
+        return True
+    return bool(re.search(r"\d", key)) and len(key) >= 3
+
+
+def _cell(box, size: int = 48) -> tuple[int, int]:
+    """글자 상자의 화면상 위치를 칸으로 뭉갭니다. 워터마크 판정에 씁니다."""
+    xs = [float(p[0]) for p in box]
+    ys = [float(p[1]) for p in box]
+    return (int((min(xs) + max(xs)) / 2 // size), int((min(ys) + max(ys)) / 2 // size))
+
+
+def _drop_static_overlays(per_frame: list[tuple[float, list[tuple]]]) -> list[tuple[float, list[str]]]:
+    """영상 내내 같은 자리에 같은 글자가 떠 있는 것(채널 로고 등)을 지웁니다.
+
+    쇼츠는 채널 워터마크가 모든 프레임에 찍힙니다. 그대로 두면 **모든 장면 카드가
+    같은 글자를 공유**해서, 글 좌표와 단어 매칭이 전부 그 글자에 끌려갑니다.
+    실측: 파스타 영상에서 채널 로고가 "J희오늘딪먹지8 / J의오늘되업지 / J희오늘딪목지8"
+    처럼 매번 다르게 읽히며 카드마다 5회씩 들어갔습니다.
+
+    위치만 보면 안 됩니다 — 쇼츠 자막도 보통 같은 높이에 뜹니다. 그래서
+    **같은 칸에 계속 나오면서 글자까지 비슷한** 경우만 지웁니다. 로고는 오인식이
+    섞여도 서로 닮았고(비슷도 0.5 이상), 자막은 내용이 바뀌어 닮지 않습니다.
+    """
+    total = len(per_frame)
+    if total < 5:
+        return [(t, [b[1] for b in boxes]) for t, boxes in per_frame]
+
+    seen_in: dict[tuple[int, int], list[str]] = {}
+    frames_with: dict[tuple[int, int], set[int]] = {}
+    for i, (_, boxes) in enumerate(per_frame):
+        for box, text, _conf in boxes:
+            key = _cell(box)
+            seen_in.setdefault(key, []).append(_normalize(text))
+            frames_with.setdefault(key, set()).add(i)
+
+    static: set[tuple[int, int]] = set()
+    for key, texts in seen_in.items():
+        if len(frames_with[key]) < total * 0.8:
+            continue
+        modal = Counter(texts).most_common(1)[0][0]
+        if not modal:
+            continue
+        similarity = sum(SequenceMatcher(None, modal, t).ratio() for t in texts) / len(texts)
+        if similarity >= 0.5:
+            static.add(key)
+
+    return [
+        (t, [text for box, text, _c in boxes if _cell(box) not in static])
+        for t, boxes in per_frame
+    ]
+
+
+def _load_image(path: Path):
+    """한글 경로에서도 읽히게 파일을 직접 디코딩합니다 (cv2.imread 우회)."""
+    import cv2
+    import numpy as np
+
+    data = np.fromfile(str(path), dtype=np.uint8)   # 경로 인코딩을 타지 않습니다
+    image = cv2.imdecode(data, cv2.IMREAD_COLOR)
+    if image is None:
+        raise ValueError(f"이미지를 읽지 못했습니다: {path.name}")
+    return cv2.cvtColor(image, cv2.COLOR_BGR2RGB)   # EasyOCR 은 RGB 를 기대합니다
+
+
+def _recognize_easyocr(frames: list[tuple[float, Path]], counts: dict | None = None) -> list[dict]:
     global _reader
     import easyocr
 
     from server.config import DEVICE
 
     if _reader is None:
-        # verbose=False: 첫 실행 때 뜨는 다운로드 진행바(█)가 한글 윈도우 콘솔(cp949)에서
-        # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
-        _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
+        with MODEL_LOCK:  # 동시에 두 영상을 저장해도 모델은 한 번만 올립니다
+            if _reader is None:
+                # verbose=False: 첫 실행 때 뜨는 다운로드 진행바(█)가 한글 윈도우 콘솔(cp949)에서
+                # UnicodeEncodeError 로 죽습니다. 서버 로그에 진행바는 필요 없습니다.
+                _reader = easyocr.Reader(["ko", "en"], gpu=DEVICE == "cuda", verbose=False)
 
-    results: list[dict] = []
+    per_frame: list[tuple[float, list[tuple]]] = []
     for time_sec, path in frames:
         try:
-            lines = _reader.readtext(str(path), detail=0)
-        except Exception:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다
+            # detail=1 로 신뢰도와 위치를 함께 받습니다. detail=0 으로 글자만 받으면
+            # 배경 무늬에서 나온 쓰레기("C다 'F60\" 1' ;;}")를 걸러낼 방법이 없습니다.
+            # ⚠ 경로 문자열을 넘기면 안 됩니다. EasyOCR 은 내부에서 cv2.imread 를 쓰는데,
+            #   OpenCV 는 윈도우에서 한글이 든 경로를 열지 못하고 None 을 돌려줍니다.
+            #   그러면 'NoneType' object has no attribute 'shape' 로 **모든 프레임이 실패**합니다.
+            #   프로젝트 폴더 이름에 한글이 있으면 OCR 이 통째로 비는데 로그만 보면 알기 어렵습니다.
+            #   파일을 직접 읽어 배열로 넘기면 경로 인코딩과 무관해집니다.
+            boxes = _reader.readtext(_load_image(path))
+        except Exception as exc:  # noqa: BLE001 - 프레임 하나가 실패해도 계속합니다(실패 수는 셉니다)
+            if counts is not None:
+                counts["failed_frames"] += 1
+                if counts["first_error"] is None:
+                    from server.pipeline.health import describe_exception
+
+                    info = describe_exception(exc)
+                    # 로컬 모델 오류라 Gemini 등급으로 읽지 않습니다. 파일 이름(00000500.jpg)의 '500' 을
+                    # 서버 오류로 오해하면 '잠깐 뒤 다시'로 보여 원인을 잘못 짚습니다.
+                    info["error_code"] = "FATAL"
+                    info["message"] = info["message"][:300]
+                    counts["first_error"] = info
             continue
-        text = " ".join(str(line).strip() for line in lines if str(line).strip())
+        picked: list[tuple] = []
+        seen: set[str] = set()
+        for box, text, confidence in boxes:
+            text = str(text).strip()
+            key = _normalize(text)
+            if float(confidence) < MIN_CONFIDENCE or not _is_meaningful(key) or key in seen:
+                continue
+            seen.add(key)
+            picked.append((box, text, float(confidence)))
+        per_frame.append((time_sec, picked))
+
+    results: list[dict] = []
+    for time_sec, lines in _drop_static_overlays(per_frame):
+        text = " ".join(lines)
         if text:
             results.append({"time": time_sec, "text": text})
     return results

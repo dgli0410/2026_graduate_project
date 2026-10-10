@@ -53,18 +53,30 @@ def _cards_text(segments: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-def _fallback_summary(title: str, segments: list[dict[str, Any]]) -> dict[str, Any]:
+def _fallback_summary(
+    title: str, segments: list[dict[str, Any]], error: BaseException | None = None
+) -> dict[str, Any]:
     steps = [
         {"time": seg["start_time"], "label": (seg.get("caption") or seg.get("asr_text") or "")[:40]}
         for seg in segments[:: max(1, len(segments) // 5)][:5]
     ]
-    return {
+    out = {
         "headline": title or "요약을 생성하지 못했습니다.",
         "keywords": [],
         "steps": [s for s in steps if s["label"]],
         "ingredients": [],
         "degraded": True,
     }
+    if error is not None:
+        out["degraded_reason"] = f"{type(error).__name__}: {error}"[:200]  # 화면 · 로그용 짧은 이유
+        # 왜 대체 요약이 됐는지 남깁니다(할당량 · 차단 · 키 없음). 등급은 예외에서 바로 뽑습니다 —
+        # 긴 429 본문을 잘라 둔 뒤 다시 분류하면 '일일 할당량' 표식이 잘려 나갑니다.
+        from server.pipeline.health import describe_exception
+
+        info = describe_exception(error)
+        info["message"] = info["message"][:500]
+        out["degraded_error"] = info
+    return out
 
 
 def summarize(title: str, segments: list[dict[str, Any]]) -> dict[str, Any]:
@@ -72,18 +84,28 @@ def summarize(title: str, segments: list[dict[str, Any]]) -> dict[str, Any]:
         return _fallback_summary(title, segments)
     from google.genai import types
 
+    from server.gemini import EmptyResponse, call_with_retry, empty_reason
+
     try:
-        response = get_client().models.generate_content(
-            model=ANSWER_MODEL,
-            contents=PROMPT.format(cards=_cards_text(segments)),
-            config=types.GenerateContentConfig(
-                response_mime_type="application/json", response_schema=VideoSummary
+        client = get_client()
+        response = call_with_retry(
+            lambda: client.models.generate_content(
+                model=ANSWER_MODEL,
+                contents=PROMPT.format(cards=_cards_text(segments)),
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json", response_schema=VideoSummary
+                ),
             ),
+            attempts=2,  # 요약은 검색에 필수가 아니라 재시도를 짧게 둡니다(일시 오류면 한 번 더)
         )
         parsed = response.parsed
         if parsed is None:
-            return _fallback_summary(title, segments)
+            # 카드가 있는데 요약이 비면 차단(SAFETY · RECITATION)이나 JSON 깨짐입니다.
+            return _fallback_summary(
+                title, segments,
+                EmptyResponse(f"요약 응답을 읽지 못했습니다({empty_reason(response)})."),
+            )
         summary = parsed if isinstance(parsed, VideoSummary) else VideoSummary.model_validate(parsed)
         return summary.model_dump()
-    except Exception:  # noqa: BLE001 - 요약 실패로 저장 전체를 실패시키지는 않습니다
-        return _fallback_summary(title, segments)
+    except Exception as exc:  # noqa: BLE001 - 요약 실패로 저장 전체를 실패시키지는 않습니다
+        return _fallback_summary(title, segments, exc)

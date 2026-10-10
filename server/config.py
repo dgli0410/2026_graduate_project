@@ -28,11 +28,15 @@ COMPUTE_TYPE = _flag("COMPUTE_TYPE", "int8" if DEVICE == "cpu" else "float16")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "").strip()
 # 모델을 고를 때는 tools/check_models.py 로 응답 속도를 먼저 재보세요.
 # 최신 모델일수록 붐벼서 503(일시 과부하)이 잦습니다.
+# ⚠ ANSWER_MODEL 과 **다른 모델**로 두세요. 무료 티어 할당량은 모델별로 따로 잡혀서,
+#   캡션과 답변을 같은 모델로 두면 하루 20회를 나눠 쓰게 됩니다(둘로 나누면 40회).
 CAPTION_MODEL = os.getenv("CAPTION_MODEL", "gemini-3.5-flash")
 ANSWER_MODEL = os.getenv("ANSWER_MODEL", "gemini-3.5-flash-lite")
 # 마스터 문서 단계 6 / 12장: 영상 1개당 Gemini 호출 상한을 코드로 강제합니다.
-MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "3"))
-GRID_FRAMES = int(os.getenv("GRID_FRAMES", "6"))  # 그리드 한 장에 넣을 프레임 수
+# 코드 기본값을 .env.example · CLAUDE.md 와 같게 둡니다(영상당 1회 · 그리드 12장). .env 에 이 줄이 없을 때
+# 3회 · 6장으로 돌면, 무료 한도(모델당 하루 20회)로 저장할 수 있는 영상 수가 1/3 로 줄어듭니다.
+MAX_GEMINI_CALLS_PER_VIDEO = int(os.getenv("MAX_GEMINI_CALLS_PER_VIDEO", "1"))
+GRID_FRAMES = int(os.getenv("GRID_FRAMES", "12"))  # 그리드 한 장에 넣을 프레임 수
 
 # --- 네이버쇼핑 검색 API (선택) ---------------------------------------------
 # 없어도 됩니다. 키가 있으면 재료 구매 링크에 최저가가 붙습니다.
@@ -50,8 +54,16 @@ IMAGE_EMBED_BACKEND = _flag("IMAGE_EMBED_BACKEND", "none")  # siglip | none (D �
 
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "small")
 BGE_MODEL = os.getenv("BGE_MODEL", "BAAI/bge-m3")
-SIGLIP_MODEL = os.getenv("SIGLIP_MODEL", "google/siglip2-base-patch16-224")
+SIGLIP_MODEL = os.getenv("SIGLIP_MODEL", "google/siglip2-base-patch16-naflex")
+# naflex = 원본 비율 유지. 확장프로그램 프레임이 540x960(9:16) 이라
+# 정사각형으로 찌그러뜨리는 -224 보다 유리합니다.
 SIGLIP_ADAPTER = os.getenv("SIGLIP_ADAPTER", "").strip()  # 요리 도메인 LoRA 경로
+# 요리 도메인 선형 투영(proj_best.pt). 텍스트/이미지 임베딩을 같은 공간으로 다시 맞춥니다.
+# RecipeGen 2만 쌍으로 학습: 단계 구분 R@1 0.676 -> 0.780.
+SIGLIP_PROJECTION = os.getenv("SIGLIP_PROJECTION", "").strip()
+# SigLIP 은 한국어가 약합니다(단계 구분 R@1 한국어 0.514 vs 영어 0.676, 정렬 적용 시 0.578 vs 0.780).
+# true 면 그림 좌표용 질의만 영어로 번역합니다. 글 좌표는 한국어 그대로 갑니다.
+SIGLIP_QUERY_TRANSLATE = _flag("SIGLIP_QUERY_TRANSLATE", "false") == "true"
 GEMINI_EMBED_MODEL = os.getenv("GEMINI_EMBED_MODEL", "gemini-embedding-001")
 GEMINI_EMBED_DIM = int(os.getenv("GEMINI_EMBED_DIM", "768"))
 
@@ -66,6 +78,9 @@ FRAME_DEDUP_THRESHOLD = float(os.getenv("FRAME_DEDUP_THRESHOLD", "0.02"))
 SEGMENT_SECONDS = float(os.getenv("SEGMENT_SECONDS", "4.0"))
 SEEK_LEAD_SECONDS = float(os.getenv("SEEK_LEAD_SECONDS", "1.5"))
 SEARCH_TOP_K = int(os.getenv("SEARCH_TOP_K", "5"))
+# 정확한 단어 채널에 IDF(역문서빈도) 가중치를 쓸지. 끄면 예전의 단순 포함 비율입니다.
+# 9장 실험에서 이 채널의 기여도를 켜고 끄며 재려면 여기를 씁니다.
+LEXICAL_IDF = _flag("LEXICAL_IDF", "true") == "true"
 DEDUP_OVERLAP_SECONDS = float(os.getenv("DEDUP_OVERLAP_SECONDS", "2.0"))
 
 # --- 저장소 ---------------------------------------------------------------

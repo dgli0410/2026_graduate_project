@@ -265,6 +265,39 @@ def list_segments(user_id: str, video_id: str) -> list[dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
+def count_segments(user_id: str) -> int:
+    """이 사용자의 장면 카드 수. IDF 캐시를 언제 다시 만들지 판단하는 데 씁니다."""
+    with session() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS n FROM segments WHERE user_id=?", (user_id,)
+        ).fetchone()
+    return int(row["n"]) if row else 0
+
+
+def all_segment_texts(user_id: str) -> list[str]:
+    """IDF 계산용 코퍼스. 카드 하나가 문서 하나입니다.
+
+    ⚠ search.payload_text() 가 실제로 뒤지는 것과 **같은 텍스트**여야 합니다.
+      (제목 + 장면설명 + 말 + 자막) 통계와 채점 대상이 어긋나면 IDF 가 엉뚱해집니다.
+    """
+    with session() as conn:
+        rows = conn.execute(
+            """
+            SELECT v.title AS title, s.caption AS caption,
+                   s.asr_text AS asr_text, s.ocr_text AS ocr_text
+              FROM segments s
+              LEFT JOIN videos v
+                ON v.user_id = s.user_id AND v.video_id = s.video_id
+             WHERE s.user_id = ?
+            """,
+            (user_id,),
+        ).fetchall()
+    return [
+        " ".join(str(r[k] or "") for k in ("title", "caption", "asr_text", "ocr_text"))
+        for r in rows
+    ]
+
+
 # --- condition runs (비교 실험) -------------------------------------------
 
 def start_condition_run(user_id: str, video_id: str, condition: str) -> None:

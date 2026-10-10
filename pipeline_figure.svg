@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+     viewBox="0 0 1700 1250" width="1700" height="1250">
+<style>
+  text { font-family: "IBM Plex Sans KR","Malgun Gothic","맑은 고딕",system-ui,sans-serif; }
+  .d-box   { fill:#FFFFFF; stroke:#C8D0DA; stroke-width:1.3; }
+  .d-local { fill:#E6F3F0; stroke:#0B6E60; stroke-width:1.5; }
+  .d-api   { fill:#FAF0DC; stroke:#8E5F0C; stroke-width:1.5; stroke-dasharray:5 4; }
+  .d-star  { fill:#0B564B; stroke:#0B564B; stroke-width:1.5; }
+
+  .d-zone  { fill:#151A21; font-size:16px;   font-weight:600; letter-spacing:-.01em; }
+  .d-stage { fill:#5C6673; font-size:11.5px; font-weight:500; letter-spacing:.05em; }
+  .d-t     { fill:#151A21; font-size:15px;   font-weight:600; }
+  .d-sub   { fill:#5C6673; font-size:12px; }
+  .d-mono  { fill:#151A21; font-size:14px;   font-weight:600;
+             font-family:"IBM Plex Mono",Consolas,"D2Coding",monospace; }
+  .d-mono.is-local { fill:#0B6E60; }
+  .d-mono.is-api   { fill:#8E5F0C; }
+  .d-lbl   { fill:#5C6673; font-size:12px; }
+  .d-note  { fill:#5C6673; font-size:12.5px; }
+  .d-leg   { fill:#151A21; font-size:13px; }
+
+  .on-star.d-stage { fill:#E9F7F3; opacity:.78; }
+  .on-star.d-sub   { fill:#E9F7F3; opacity:.82; }
+  .on-star.d-mono  { fill:#E9F7F3; }
+
+  .d-flow  { color:#5C6673; stroke:#5C6673; stroke-width:1.5; fill:none; }
+  .d-bus   { stroke:#5C6673; stroke-width:1.5; fill:none; }
+  .d-div   { stroke:#C8D0DA; stroke-width:1; }
+  .d-tick  { stroke:#C8D0DA; stroke-width:2.5; }
+  .d-plate { fill:#F5F7F9; }
+</style>
+<rect x="0" y="0" width="1700" height="1250" fill="#F5F7F9"/>
+
+
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5"
+                  markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <polygon points="0,1.5 10,5 0,8.5" fill="#5C6673"></polygon>
+          </marker>
+        </defs>
+
+        <!-- zone dividers -->
+        <line class="d-div" x1="385" y1="62" x2="385" y2="1150"></line>
+        <line class="d-div" x1="1105" y1="62" x2="1105" y2="1150"></line>
+
+        <!-- zone headers -->
+        <text class="d-zone" x="55" y="46">① 브라우저 — 추출</text>
+        <text class="d-zone" x="425" y="46">② 서버 — 색인 파이프라인</text>
+        <text class="d-zone" x="1145" y="46">③ 질의 시점 — 검색</text>
+
+        <!-- ============ ZONE A ============ -->
+        <rect class="d-box" x="55" y="96" width="290" height="64" rx="6"></rect>
+        <text class="d-t"   x="200" y="122" text-anchor="middle">유튜브 쇼츠 재생</text>
+        <text class="d-sub" x="200" y="143" text-anchor="middle">실시간 · 영상 길이만큼</text>
+
+        <path class="d-flow" d="M200,160 L200,200" marker-end="url(#ar)"></path>
+
+        <rect class="d-box" x="55" y="200" width="290" height="130" rx="6"></rect>
+        <text class="d-stage" x="200" y="226" text-anchor="middle">② 프레임 · 오디오 추출</text>
+        <text class="d-mono"  x="200" y="252" text-anchor="middle">Canvas · MediaRecorder</text>
+        <text class="d-sub"   x="200" y="276" text-anchor="middle">0.5초마다 540×960 JPEG · 중복 제거</text>
+        <text class="d-sub"   x="200" y="297" text-anchor="middle">오디오 → 16 kHz WAV</text>
+        <text class="d-sub"   x="200" y="319" text-anchor="middle">모델 없음</text>
+
+        <line class="d-tick" x1="58" y1="372" x2="58" y2="424"></line>
+        <text class="d-note" x="74" y="389">서버는 유튜브에 접속하지 않습니다.</text>
+        <text class="d-note" x="74" y="411">화면과 소리를 확장이 뽑아 올립니다.</text>
+
+        <!-- A -> B -->
+        <path class="d-flow" d="M345,265 L540,265" marker-end="url(#ar)"></path>
+        <rect class="d-plate" x="378" y="243" width="128" height="18"></rect>
+        <text class="d-lbl" x="442" y="256" text-anchor="middle">프레임 + 오디오</text>
+
+        <!-- ============ ZONE B ============ -->
+        <rect class="d-box" x="540" y="235" width="400" height="60" rx="6"></rect>
+        <text class="d-stage" x="740" y="259" text-anchor="middle">③ 업로드 저장</text>
+        <text class="d-mono"  x="740" y="282" text-anchor="middle">data/media/&lt;user&gt;/&lt;video&gt;/</text>
+
+        <path class="d-bus"  d="M740,295 L740,325"></path>
+        <path class="d-bus"  d="M518,325 L962,325"></path>
+        <path class="d-flow" d="M518,325 L518,355" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M740,325 L740,355" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M962,325 L962,355" marker-end="url(#ar)"></path>
+
+        <rect class="d-local" x="415" y="355" width="206" height="85" rx="6"></rect>
+        <text class="d-stage"         x="518" y="381" text-anchor="middle">④ 음성 받아적기</text>
+        <text class="d-mono is-local" x="518" y="405" text-anchor="middle">faster-whisper</text>
+        <text class="d-sub"           x="518" y="427" text-anchor="middle">small · 단어 시각 포함</text>
+
+        <rect class="d-local" x="637" y="355" width="206" height="85" rx="6"></rect>
+        <text class="d-stage"         x="740" y="381" text-anchor="middle">⑤ 화면 글자 읽기</text>
+        <text class="d-mono is-local" x="740" y="405" text-anchor="middle">EasyOCR</text>
+        <text class="d-sub"           x="740" y="427" text-anchor="middle">한국어 + 영어 · 전 프레임</text>
+
+        <rect class="d-api" x="859" y="355" width="206" height="85" rx="6"></rect>
+        <text class="d-stage"       x="962" y="381" text-anchor="middle">⑥ 장면 설명</text>
+        <text class="d-mono is-api" x="962" y="405" text-anchor="middle">Gemini 3.5 Flash-Lite</text>
+        <text class="d-sub"         x="962" y="427" text-anchor="middle">격자 6장 → 1회 · 영상당 3회</text>
+
+        <path class="d-bus"  d="M518,440 L518,465"></path>
+        <path class="d-bus"  d="M740,440 L740,465"></path>
+        <path class="d-bus"  d="M962,440 L962,465"></path>
+        <path class="d-bus"  d="M518,465 L962,465"></path>
+        <path class="d-flow" d="M740,465 L740,495" marker-end="url(#ar)"></path>
+
+        <rect class="d-box" x="490" y="495" width="500" height="62" rx="6"></rect>
+        <text class="d-stage" x="740" y="520" text-anchor="middle">⑦ 4초 장면 카드</text>
+        <text class="d-sub"   x="740" y="543" text-anchor="middle">말 · 자막 · 장면 설명 + 대표 프레임 1장 · 규칙 기반</text>
+
+        <path class="d-bus"  d="M740,557 L740,580"></path>
+        <path class="d-bus"  d="M518,580 L962,580"></path>
+        <path class="d-flow" d="M518,580 L518,610" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M740,580 L740,610" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M962,580 L962,610" marker-end="url(#ar)"></path>
+
+        <rect class="d-local" x="415" y="610" width="206" height="90" rx="6"></rect>
+        <text class="d-stage"         x="518" y="636" text-anchor="middle">⑧ 글 좌표</text>
+        <text class="d-mono is-local" x="518" y="660" text-anchor="middle">BGE-M3</text>
+        <text class="d-sub"           x="518" y="682" text-anchor="middle">1024차원</text>
+
+        <rect class="d-local" x="637" y="610" width="206" height="90" rx="6"></rect>
+        <text class="d-stage"         x="740" y="636" text-anchor="middle">⑧ 그림 좌표</text>
+        <text class="d-mono is-local" x="740" y="660" text-anchor="middle">SigLIP2 naflex</text>
+        <text class="d-sub"           x="740" y="682" text-anchor="middle">768차원 · 기본 가중치</text>
+
+        <rect class="d-api" x="859" y="610" width="206" height="90" rx="6"></rect>
+        <text class="d-stage"       x="962" y="636" text-anchor="middle">⑨ 전체 요약</text>
+        <text class="d-mono is-api" x="962" y="660" text-anchor="middle">Gemini 3.5 Flash-Lite</text>
+        <text class="d-sub"         x="962" y="682" text-anchor="middle">카드 → 요약 한 줄</text>
+
+        <path class="d-flow" d="M518,700 L518,745" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M740,700 L740,745" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M962,700 L962,745" marker-end="url(#ar)"></path>
+
+        <rect class="d-box" x="490" y="745" width="500" height="85" rx="6"></rect>
+        <text class="d-stage" x="740" y="771" text-anchor="middle">⑩ 저장소</text>
+        <text class="d-sub"   x="740" y="794" text-anchor="middle">Qdrant · 벡터 2종 (글 1024d · 그림 768d)</text>
+        <text class="d-sub"   x="740" y="816" text-anchor="middle">SQLite · 장면 카드 · 요약</text>
+
+        <line class="d-tick" x1="493" y1="885" x2="493" y2="937"></line>
+        <text class="d-note" x="509" y="902">색인 단계에서 외부로 나가는 호출은</text>
+        <text class="d-note" x="509" y="924">⑥ 장면 설명 하나뿐입니다.</text>
+
+        <!-- B -> C : 저장된 벡터가 비교 대상으로 들어간다 -->
+        <path class="d-flow" d="M990,787 L1160,787" marker-end="url(#ar)"></path>
+        <rect class="d-plate" x="1035" y="765" width="82" height="18"></rect>
+        <text class="d-lbl" x="1076" y="778" text-anchor="middle">저장된 벡터</text>
+
+        <!-- ============ ZONE C ============ -->
+        <rect class="d-box" x="1160" y="235" width="480" height="60" rx="6"></rect>
+        <text class="d-stage" x="1400" y="259" text-anchor="middle">⑪ 질문</text>
+        <text class="d-t"     x="1400" y="283" text-anchor="middle">“김치찌개 레시피 영상 찾아줘”</text>
+
+        <path class="d-bus"  d="M1400,295 L1400,330"></path>
+        <path class="d-bus"  d="M1272,330 L1527,330"></path>
+        <path class="d-flow" d="M1272,330 L1272,430" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M1527,330 L1527,430" marker-end="url(#ar)"></path>
+
+        <rect class="d-local" x="1160" y="430" width="225" height="90" rx="6"></rect>
+        <text class="d-stage"         x="1272" y="456" text-anchor="middle">질의 → 글 좌표</text>
+        <text class="d-mono is-local" x="1272" y="480" text-anchor="middle">BGE-M3</text>
+        <text class="d-sub"           x="1272" y="502" text-anchor="middle">한국어 그대로</text>
+
+        <rect class="d-api" x="1415" y="430" width="225" height="58" rx="6"></rect>
+        <text class="d-stage"       x="1527" y="452" text-anchor="middle">질의 영어 번역</text>
+        <text class="d-mono is-api" x="1527" y="474" text-anchor="middle">Gemini Flash-Lite</text>
+
+        <path class="d-flow" d="M1527,488 L1527,508" marker-end="url(#ar)"></path>
+
+        <rect class="d-star" x="1415" y="508" width="225" height="104" rx="6"></rect>
+        <text class="d-stage on-star" x="1527" y="534" text-anchor="middle">질의 → 그림 좌표</text>
+        <text class="d-mono on-star"  x="1527" y="558" text-anchor="middle">SigLIP2 텍스트 인코더</text>
+        <text class="d-sub on-star"   x="1527" y="580" text-anchor="middle">① 소문자로</text>
+        <text class="d-sub on-star"   x="1527" y="600" text-anchor="middle">② a photo of {번역된 질문}</text>
+
+        <path class="d-flow" d="M1272,520 L1272,745" marker-end="url(#ar)"></path>
+        <path class="d-bus"  d="M1527,612 L1527,700 L1350,700"></path>
+        <path class="d-flow" d="M1350,700 L1350,745" marker-end="url(#ar)"></path>
+
+        <!-- 실제 비교가 일어나는 곳 -->
+        <rect class="d-box" x="1160" y="745" width="260" height="85" rx="6"></rect>
+        <text class="d-stage" x="1290" y="771" text-anchor="middle">⑫ 벡터 비교</text>
+        <text class="d-mono"  x="1290" y="794" text-anchor="middle">코사인 유사도</text>
+        <text class="d-sub"   x="1290" y="816" text-anchor="middle">검색마다 상위 40 · user_id 필터</text>
+
+        <path class="d-flow" d="M1420,787 L1450,787" marker-end="url(#ar)"></path>
+        <rect class="d-plate" x="1409" y="760" width="52" height="17"></rect>
+        <text class="d-lbl" x="1435" y="773" text-anchor="middle">후보</text>
+
+        <rect class="d-box" x="1450" y="745" width="190" height="85" rx="6"></rect>
+        <text class="d-stage" x="1545" y="771" text-anchor="middle">단어 매칭</text>
+        <text class="d-sub"   x="1545" y="794" text-anchor="middle">후보 텍스트에</text>
+        <text class="d-sub"   x="1545" y="815" text-anchor="middle">질의 토큰 포함률</text>
+
+        <path class="d-flow" d="M1290,830 L1290,890" marker-end="url(#ar)"></path>
+        <path class="d-flow" d="M1545,830 L1545,890" marker-end="url(#ar)"></path>
+
+        <rect class="d-box" x="1160" y="890" width="480" height="62" rx="6"></rect>
+        <text class="d-stage" x="1400" y="915" text-anchor="middle">⑫ 융합</text>
+        <text class="d-mono"  x="1400" y="938" text-anchor="middle">세 점수 합산 → 순위</text>
+
+        <path class="d-flow" d="M1400,952 L1400,1035" marker-end="url(#ar)"></path>
+
+        <rect class="d-api" x="1160" y="1035" width="480" height="78" rx="6"></rect>
+        <text class="d-stage"       x="1400" y="1060" text-anchor="middle">⑫ 답변 · ⑬ 이동</text>
+        <text class="d-mono is-api" x="1400" y="1083" text-anchor="middle">Gemini 3.5 Flash-Lite</text>
+        <text class="d-sub"         x="1400" y="1104" text-anchor="middle">▶ 영상 목록 · 해당 시점으로 이동</text>
+
+        <!-- ============ legend ============ -->
+        <rect class="d-local" x="55"  y="1188" width="17" height="17" rx="3"></rect>
+        <text class="d-leg"   x="80"  y="1202">로컬 모델 · 기본 가중치</text>
+        <rect class="d-star"  x="250" y="1188" width="17" height="17" rx="3"></rect>
+        <text class="d-leg"   x="275" y="1202">우리가 맞춘 입력 처리</text>
+        <rect class="d-api"   x="460" y="1188" width="17" height="17" rx="3"></rect>
+        <text class="d-leg"   x="485" y="1202">외부 API 호출</text>
+        <rect class="d-box"   x="620" y="1188" width="17" height="17" rx="3"></rect>
+        <text class="d-leg"   x="645" y="1202">모델 없음 · 규칙 기반</text>
+      
+</svg>

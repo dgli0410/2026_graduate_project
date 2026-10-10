@@ -121,6 +121,8 @@ function showCapture(visible, ratio = 0, message = "") {
 }
 
 async function saveCurrent() {
+  // 리스너가 못 잡은 경우에도 엉뚱한 영상을 저장하지 않도록, 보내기 직전에 다시 읽습니다.
+  await refreshCurrentVideo();
   if (!currentInfo?.videoId) return;
   const videoId = currentInfo.videoId;
   const btn = $("save-btn");
@@ -219,6 +221,21 @@ async function createPlaylist() {
 
 // --- 보관함 ---------------------------------------------------------------
 
+const STAGE_NAMES = { asr: "음성", ocr: "자막", caption: "장면 설명", summary_llm: "요약" };
+
+// 분석 상태 요약(analysis_health.summary) → 경고 문구. 분석이 완전하면 빈 문자열.
+// 통째로 실패한 단계와 일부만 빠진 단계(예: 그리드 일부가 할당량으로 빠짐)를 함께 적습니다.
+function healthWarning(health) {
+  if (!health || health.complete !== false) return "";
+  const label = (name) => STAGE_NAMES[name] || name;
+  const names = [
+    ...(health.failed_stages || []).map(label),
+    ...(health.partial_stages || []).map((name) => `${label(name)}(일부)`),
+  ].join(", ");
+  const quota = health.quota_stages?.length ? " (Gemini 할당량 소진)" : "";
+  return `⚠ 일부 분석 실패: ${names || "단계 정보 없음"}${quota}`;
+}
+
 function videoCard(video) {
   const card = document.createElement("div");
   card.className = "card";
@@ -246,6 +263,16 @@ function videoCard(video) {
   status.textContent =
     video.status === "failed" ? `${video.status_label}: ${video.error}` : video.status_label;
   main.appendChild(status);
+
+  // 분석은 끝났지만 일부 단계가 실패한 영상(예: 할당량 소진으로 장면 설명 없음).
+  // 검색은 되지만 결과가 덜 정확할 수 있어 알려 줍니다. 할당량이 풀린 뒤 다시 저장하면 됩니다.
+  const warning = video.status === "ready" ? healthWarning(video.summary?.analysis_health?.summary) : "";
+  if (warning) {
+    const warn = document.createElement("div");
+    warn.className = "warn";
+    warn.textContent = warning;
+    main.appendChild(warn);
+  }
 
   if (video.status !== "ready" && video.status !== "failed") {
     const bar = document.createElement("div");
@@ -962,6 +989,13 @@ function bindEvents() {
     return false;
   });
   chrome.tabs.onActivated.addListener(refreshCurrentVideo);
+  // 쇼츠는 스크롤만 해도 **같은 탭 안에서** 영상이 바뀝니다. onActivated(탭 전환)만
+  // 듣고 있으면 Side Panel 이 이전 영상 정보를 그대로 들고 있어, 저장 버튼이 엉뚱한
+  // video_id 를 보냅니다(이미 저장된 영상이면 "이미 저장된 영상입니다" 로 막힙니다).
+  // 유튜브는 History API 로 주소를 바꾸므로 onUpdated 의 changeInfo.url 로 잡힙니다.
+  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+    if (changeInfo.url && tab.active) refreshCurrentVideo();
+  });
 }
 
 (async function init() {

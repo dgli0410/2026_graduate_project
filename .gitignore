@@ -22,3 +22,11 @@ __pycache__/
 .DS_Store
 Thumbs.db
 *.log
+
+# 오피스가 파일을 열어두면 만드는 잠금 파일
+~$*
+eval/*.bak
+eval/*.bak2
+
+# 평가셋 백업 (로컬 전용)
+eval/*.bak*

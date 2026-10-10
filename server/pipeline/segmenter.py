@@ -8,18 +8,37 @@
 """
 from __future__ import annotations
 
+import re
+from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any, Iterable
 
 from server.config import SEGMENT_SECONDS
 
+# 0.5초마다 한 장이라 4초 카드에는 같은 자막이 8번쯤 들어옵니다. 글자가 정확히 같으면
+# 쉽게 걸리지만 OCR 은 프레임마다 조금씩 다르게 읽습니다("올리브유 두르고" / "올리브유 무르고").
+# 그대로 두면 한 카드의 자막이 같은 말의 변형으로 채워져, 단어 매칭과 글 좌표가 왜곡됩니다.
+NEAR_DUPLICATE = 0.8
+
+
+def _key(text: str) -> str:
+    return re.sub(r"[^0-9a-z가-힣]", "", text.lower())
+
 
 def _join(values: Iterable[str]) -> str:
     picked: list[str] = []
+    keys: list[str] = []
     for value in values:
         text = str(value or "").strip()
-        if text and text not in picked:
-            picked.append(text)
+        if not text:
+            continue
+        key = _key(text)
+        if not key or any(
+            SequenceMatcher(None, key, seen).ratio() >= NEAR_DUPLICATE for seen in keys
+        ):
+            continue
+        keys.append(key)
+        picked.append(text)
     return " ".join(picked)
 
 
