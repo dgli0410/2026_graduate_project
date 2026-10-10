@@ -1,0 +1,2235 @@
+[
+  {
+    "key": "all",
+    "label": "음성+자막+설명",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.11861329943102608,
+        "recall": 0.5,
+        "ap": 0.125,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.5196610607458307,
+        "recall": 1.0,
+        "ap": 0.3666666666666667,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.17376534287144002,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.6885288809404666,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7817086594926391,
+      "recall": 0.8548387096774194,
+      "ap": 0.6534946236559139,
+      "hit1": 0.7096774193548387
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.712663356060825,
+        "recall": 0.75,
+        "ap": 0.5333333333333333,
+        "hit1": 0.5833333333333334
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.7720828092924535,
+        "recall": 0.9,
+        "ap": 0.6908333333333333,
+        "hit1": 0.7
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.8844644531797085,
+        "recall": 0.9444444444444444,
+        "ap": 0.7722222222222221,
+        "hit1": 0.8888888888888888
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "no_cap",
+    "label": "음성+자막 (-설명)",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.13770577618809332,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.639909328045346,
+        "recall": 1.0,
+        "ap": 0.5,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.27541155237618664,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.3196311965446524,
+        "recall": 0.5,
+        "ap": 0.1,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.6278397607958708,
+        "recall": 1.0,
+        "ap": 0.45,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.4573369727327457,
+        "recall": 1.0,
+        "ap": 0.3666666666666667,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.5196610607458307,
+        "recall": 1.0,
+        "ap": 0.3666666666666667,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.8059249062006281,
+      "recall": 0.8870967741935484,
+      "ap": 0.6720430107526881,
+      "hit1": 0.7419354838709677
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.8170308215487219,
+        "recall": 0.8333333333333334,
+        "ap": 0.6138888888888888,
+        "hit1": 0.75
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.7651971514366157,
+        "recall": 0.9,
+        "ap": 0.6766666666666666,
+        "hit1": 0.8
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.836370079918739,
+        "recall": 0.9444444444444444,
+        "ap": 0.7444444444444445,
+        "hit1": 0.6666666666666666
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "no_ocr",
+    "label": "음성+설명 (-자막)",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.13770577618809332,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.6278397607958708,
+        "recall": 1.0,
+        "ap": 0.45,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.5950427489208391,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.35583989829307827,
+        "recall": 0.5,
+        "ap": 0.125,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7873139931336534,
+      "recall": 0.7903225806451613,
+      "ap": 0.6432795698924731,
+      "hit1": 0.7419354838709677
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.6776516695548357,
+        "recall": 0.625,
+        "ap": 0.46458333333333335,
+        "hit1": 0.5833333333333334
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.7942573434663719,
+        "recall": 0.95,
+        "ap": 0.7533333333333333,
+        "hit1": 0.7
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.9258155908690561,
+        "recall": 0.8333333333333334,
+        "ap": 0.7592592592592592,
+        "hit1": 1.0
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "no_asr",
+    "label": "자막+설명 (-음성)",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.4935456744811716,
+        "recall": 1.0,
+        "ap": 0.41666666666666663,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.4623836304746291,
+        "recall": 1.0,
+        "ap": 0.325,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.17376534287144002,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.35583989829307827,
+        "recall": 0.5,
+        "ap": 0.125,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.5950427489208391,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.17376534287144002,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7700448952765462,
+      "recall": 0.8709677419354839,
+      "ap": 0.6204301075268817,
+      "hit1": 0.6774193548387096
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.7391346014590704,
+        "recall": 0.7916666666666666,
+        "ap": 0.5472222222222222,
+        "hit1": 0.5833333333333334
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.7183211723399164,
+        "recall": 0.9,
+        "ap": 0.6066666666666667,
+        "hit1": 0.6
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.8687294236294362,
+        "recall": 0.9444444444444444,
+        "ap": 0.7333333333333333,
+        "hit1": 0.8888888888888888
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "cap",
+    "label": "설명만",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.35583989829307827,
+        "recall": 0.5,
+        "ap": 0.125,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.3196311965446524,
+        "recall": 0.5,
+        "ap": 0.1,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.3196311965446524,
+        "recall": 0.5,
+        "ap": 0.1,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.4933965394160924,
+        "recall": 1.0,
+        "ap": 0.45,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.35583989829307827,
+        "recall": 0.5,
+        "ap": 0.125,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.7967075809905066,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.3196311965446524,
+        "recall": 0.5,
+        "ap": 0.1,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.7967075809905066,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.41311732856427996,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7165190864077536,
+      "recall": 0.7419354838709677,
+      "ap": 0.556989247311828,
+      "hit1": 0.6451612903225806
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.6438637486406588,
+        "recall": 0.6666666666666666,
+        "ap": 0.44305555555555554,
+        "hit1": 0.5
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.6523421229504295,
+        "recall": 0.8,
+        "ap": 0.5583333333333333,
+        "hit1": 0.5
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.8847006072720182,
+        "recall": 0.7777777777777778,
+        "ap": 0.7074074074074074,
+        "hit1": 1.0
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "ocr",
+    "label": "자막만",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.4935456744811716,
+        "recall": 1.0,
+        "ap": 0.41666666666666663,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.7967075809905066,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.13770577618809332,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.6309297535714575,
+        "recall": 1.0,
+        "ap": 0.5,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.27541155237618664,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.5196610607458307,
+        "recall": 1.0,
+        "ap": 0.3666666666666667,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6278397607958708,
+        "recall": 1.0,
+        "ap": 0.45,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.5296052411645183,
+        "recall": 1.0,
+        "ap": 0.5,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7556664805437239,
+      "recall": 0.8548387096774194,
+      "ap": 0.6494623655913978,
+      "hit1": 0.6451612903225806
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.8527620455887472,
+        "recall": 0.8333333333333334,
+        "ap": 0.6972222222222223,
+        "hit1": 0.8333333333333334
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.694826684142083,
+        "recall": 0.95,
+        "ap": 0.5983333333333334,
+        "hit1": 0.4
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.6938055009299604,
+        "recall": 0.7777777777777778,
+        "ap": 0.6425925925925926,
+        "hit1": 0.6666666666666666
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  },
+  {
+    "key": "asr",
+    "label": "음성만",
+    "questions": 31,
+    "rows": [
+      {
+        "qid": "q001",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q002",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "순서타이밍",
+        "ndcg": 0.13770577618809332,
+        "recall": 0.5,
+        "ap": 0.16666666666666666,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q003",
+        "video_id": "rfkc9X4BItc",
+        "q_type": "시각적상태",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q009",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q010",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "재료분량",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q011",
+        "video_id": "11C8XqWobjQ",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q017",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.639909328045346,
+        "recall": 1.0,
+        "ap": 0.5,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q018",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 0.27541155237618664,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q019",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q021",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q022",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9327783893101107,
+        "recall": 1.0,
+        "ap": 0.7,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q023",
+        "video_id": "z8QPN-ITUvI",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q025",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "재료분량",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q026",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "순서타이밍",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q027",
+        "video_id": "igP4-Rq5zgM",
+        "q_type": "시각적상태",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q029",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "재료분량",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q030",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q031",
+        "video_id": "Zlo2JQzihwc",
+        "q_type": "시각적상태",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q037",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q038",
+        "video_id": "sfPYotqyD18",
+        "q_type": "재료분량",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q040",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "재료분량",
+        "ndcg": 0.0,
+        "recall": 0.0,
+        "ap": 0.0,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q041",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.944847956559586,
+        "recall": 1.0,
+        "ap": 0.75,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q043",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "순서타이밍",
+        "ndcg": 0.9639404333166532,
+        "recall": 1.0,
+        "ap": 0.8333333333333333,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q044",
+        "video_id": "Z7z0wW62obE",
+        "q_type": "시각적상태",
+        "ndcg": 0.4935456744811716,
+        "recall": 1.0,
+        "ap": 0.41666666666666663,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q045",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6278397607958708,
+        "recall": 1.0,
+        "ap": 0.45,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q047",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q048",
+        "video_id": "Rjfzpzj3bug",
+        "q_type": "순서타이밍",
+        "ndcg": 0.6590018048024133,
+        "recall": 1.0,
+        "ap": 0.5833333333333333,
+        "hit1": 0.0
+      },
+      {
+        "qid": "q057",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q058",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "순서타이밍",
+        "ndcg": 1.0,
+        "recall": 1.0,
+        "ap": 1.0,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q059",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "시각적상태",
+        "ndcg": 0.8262346571285599,
+        "recall": 0.5,
+        "ap": 0.5,
+        "hit1": 1.0
+      },
+      {
+        "qid": "q060",
+        "video_id": "l3WthBEFzFw",
+        "q_type": "재료분량",
+        "ndcg": 0.52129602861432,
+        "recall": 0.5,
+        "ap": 0.25,
+        "hit1": 0.0
+      }
+    ],
+    "overall": {
+      "ndcg": 0.7519191832694518,
+      "recall": 0.8064516129032258,
+      "ap": 0.6225806451612903,
+      "hit1": 0.6774193548387096
+    },
+    "by_type": {
+      "재료분량": {
+        "n": 12,
+        "ndcg": 0.6783731593361758,
+        "recall": 0.6666666666666666,
+        "ap": 0.5097222222222222,
+        "hit1": 0.5833333333333334
+      },
+      "순서타이밍": {
+        "n": 10,
+        "ndcg": 0.7541525673348914,
+        "recall": 0.9,
+        "ap": 0.6983333333333334,
+        "hit1": 0.7
+      },
+      "시각적상태": {
+        "n": 9,
+        "ndcg": 0.847499010663332,
+        "recall": 0.8888888888888888,
+        "ap": 0.6888888888888889,
+        "hit1": 0.7777777777777778
+      }
+    },
+    "no_answer": {
+      "n": 9,
+      "returned_anyway": 9
+    }
+  }
+]

@@ -45,6 +45,7 @@ python -m tools.test_user_isolation   # 사용자 격리 ★
 python -m tools.check_models          # 그날 되는 Gemini 모델
 python -m tools.e2e_test              # 서버 띄운 뒤, 전 구간
 python -m tools.run_condition --list  # 조건·영상 목록
+python -m tools.ablation              # 제거법 계획 (서버 끄고, --yes 로 실행)
 ```
 
 ## 코드 스타일
@@ -59,5 +60,7 @@ python -m tools.run_condition --list  # 조건·영상 목록
 - 평가셋 질문 64개 / 라벨 113줄 (`eval/labels_merged.csv`, 시트 `eval/labeling_sheet.xlsx`).
   측정은 `python -m tools.eval_search --all`
 - 첫 측정 nDCG@5 = **0.749** (기준선 0.724). **설명 55% 상태라 확정값이 아닙니다**
-- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 캡션 5개 복구 후 재측정
+- 제거법 7조건 전수 완료 — 재료·분량은 자막만이 유의하게 낫고 시각적 상태는 정반대.
+  전체 평균으로는 어느 쌍도 구분 안 됨(n=31). 상세 `docs/PROGRESS.md` 5-2장
+- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 질문 늘리기, 그다음 캡션 5개 복구
 - ⚠ `tools.make_labeling_sheet --force` 는 지금 시트를 덮어씁니다 (라벨 113줄이 들어 있음)
