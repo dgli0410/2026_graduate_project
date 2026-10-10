@@ -1,16 +1,18 @@
 # 쇼츠 AI 보관함 — Claude Code 작업 지침
 
 유튜브 쇼츠를 저장하면 4초 장면 카드로 분석해 두고, 자연어로 검색해 그 초로 이동시키는
-크롬 확장 + FastAPI 서버. 전체 설명은 `README.md`, 계획·실험·실측치 총정리는 `docs/MENTOR_BRIEF.md`.
+크롬 확장 + FastAPI 서버. 전체 설명은 `README.md`, 진행 상황 총정리는 `docs/PROGRESS.md`.
 
 ## 먼저 읽을 것
+- `docs/PROGRESS.md` — **★ 통합본.** 9/18 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지.
+  **무엇을 먼저 할지도 여기 7장.** 상황 파악은 이 문서 하나로 끝납니다
 - `README.md` — 실행법, 코드 구조, 담당 경계
-- `docs/MENTOR_BRIEF.md` — 왜 이렇게 설계했는지, Gemini vs 로컬 비교 결과
-- `docs/mentor-feedback.md` — 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기**
-- `docs/search-logic.md` — 검색 코드가 실제로 어떻게 도는지 + 고쳐야 할 지점
 - `docs/eval-guide.md` — 질문셋·평가셋 만드는 법. 평가 작업을 도울 때 기준이 되는 문서
-- `docs/fixes-20261010.md` — 로컬 전환에서 조용히 틀리던 버그 3개(.env 빈 값 주석 / Qdrant 차원 / EasyOCR 한글 경로)와 첫 측정값
 - `server/config.py` — 모든 설정과 조건(condition) 정의가 여기 한 곳
+- 세부 기록은 `docs/fixes-20261005.md`(현준) · `docs/fixes-20261010.md`(동현) ·
+  `SigLIP2_실험기록_20260914.md` · `docs/mentor-feedback.md`(자문 원문)
+- ⚠ `docs/MENTOR_BRIEF.md` · `docs/search-logic.md`(9/22) 와 `docs/team-meeting.md`(9/29) 는
+  **낡았습니다.** 설계 의도와 코드 위치는 유효하지만 설정값·측정치·"미해결" 목록은 믿지 마세요
 
 ## 환경
 - Python 3.14 (WhisperX 미지원 → faster-whisper 폴백이 코드에 있음). 가상환경 `.venv`
@@ -51,11 +53,11 @@ python -m tools.run_condition --list  # 조건·영상 목록
 - 파일 끝 줄바꿈은 LF
 
 ## 지금 상태 / 다음 할 일
-- 전 구간 동작, 로컬 4개 모델(faster-whisper·EasyOCR·BGE-M3·SigLIP2) CPU에서 확인 완료
-- 음성은 로컬 faster-whisper 가 기본. 저장된 영상 5개(ready 4 / failed 1)
-- **다음 할 일은 9/18 멘토 자문 기준으로 재정렬했습니다 → `docs/mentor-feedback.md` 6장**
-  1순위는 평가셋과 평가 스크립트입니다. 이게 없으면 검색을 고쳐도 좋아졌다고 말할 근거가 없습니다
-- 저장된 영상 18개(장면 카드 203개). 목록은 `eval/video_list.md`
-- 백엔드는 전부 로컬(faster-whisper / easyocr / bge 1024차원 / siglip). 장면 설명만 Gemini
-- 평가셋 질문 64개. 첫 측정 nDCG@5 = 0.751 (캡션 5개 누락 상태). 상세는 `docs/fixes-20261010.md`
-- 평가셋 라벨링 시트: `eval/labeling_sheet.xlsx` (`python -m tools.make_labeling_sheet --force` 로 갱신)
+- 전 구간 동작. 색인은 전부 로컬 모델(faster-whisper / EasyOCR / BGE-M3 1024차원 / SigLIP2),
+  **장면 설명만 Gemini.** 저장된 영상 18개 · 장면 카드 203개 (`eval/video_list.md`)
+- 채움률: 말 80% · 자막 94% · **설명 55%** (할당량으로 5개 영상에 캡션 없음)
+- 평가셋 질문 64개 / 라벨 113줄 (`eval/labels_merged.csv`, 시트 `eval/labeling_sheet.xlsx`).
+  측정은 `python -m tools.eval_search --all`
+- 첫 측정 nDCG@5 = **0.749** (기준선 0.724). **설명 55% 상태라 확정값이 아닙니다**
+- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 캡션 5개 복구 후 재측정
+- ⚠ `tools.make_labeling_sheet --force` 는 지금 시트를 덮어씁니다 (라벨 113줄이 들어 있음)

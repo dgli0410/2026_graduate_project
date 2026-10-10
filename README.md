@@ -45,16 +45,28 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 
 ## 0. 문서
 
-| 문서 | 내용 |
+**문서가 많아 보이지만 평소에 볼 것은 위 4개뿐입니다.** 나머지는 기록 보존용입니다.
+
+| 지금 보는 것 | 내용 |
 | --- | --- |
-| [`docs/MENTOR_BRIEF.md`](docs/MENTOR_BRIEF.md) | 프로젝트 총정리 — 계획·구현·실험·실측치 |
-| [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 멘토 자문 결과와 실행 계획. **무엇을 먼저 할지는 여기** |
-| [`docs/search-logic.md`](docs/search-logic.md) | 검색 로직의 실제 동작과 고쳐야 할 지점 |
-| [`docs/eval-guide.md`](docs/eval-guide.md) | **질문셋·평가셋 만드는 법** (질문 작성자·라벨러용 작업 지침) |
-| [`docs/team-meeting.md`](docs/team-meeting.md) | 팀 회의 자료 — 진행 현황과 결정할 것 |
-| [`docs/fixes-20261010.md`](docs/fixes-20261010.md) | 10/09~10 수정 기록 — 조용히 틀리던 버그 3개 + 첫 성능 측정 |
-| [`docs/meeting-brief-20261010.md`](docs/meeting-brief-20261010.md) | 10/10 회의 브리핑 (붙여넣기용, 그 자체로 완결) |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **★ 통합본.** 9/18 자문 이후 진행 상황 전체 — 무엇을 고쳤고, 지금 성적이 얼마고, 다음에 뭘 하는지. **멘토 보고·팀 공유는 이것 하나로** |
+| [`docs/eval-guide.md`](docs/eval-guide.md) | 질문셋·평가셋 만드는 법 (질문 작성자·라벨러용 작업 지침) |
+| [`eval/video_list.md`](eval/video_list.md) | 저장된 영상 목록 |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
+
+| 세부 기록 (필요할 때만) | 내용 |
+| --- | --- |
+| [`docs/fixes-20261005.md`](docs/fixes-20261005.md) | 박현준 10/05 수정 상세 |
+| [`docs/fixes-20261010.md`](docs/fixes-20261010.md) | 이동현 10/09~10 수정 상세 |
+| [`SigLIP2_실험기록_20260914.md`](SigLIP2_실험기록_20260914.md) | SigLIP2 파인튜닝 실험 전문 |
+| [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 자문 원문과 그때 세운 계획 |
+| [`docs/meeting-brief-20261010.md`](docs/meeting-brief-20261010.md) | 10/10 회의 브리핑 (붙여넣기용) |
+
+| ⚠ 낡음 — 그대로 인용하지 말 것 | 이유 |
+| --- | --- |
+| [`docs/search-logic.md`](docs/search-logic.md) | 9/22 기준. 여기 적힌 문제 대부분이 이후 고쳐졌습니다 |
+| [`docs/MENTOR_BRIEF.md`](docs/MENTOR_BRIEF.md) | 9/22 기준. 백엔드 설정·측정치가 옛날 값입니다 |
+| [`docs/team-meeting.md`](docs/team-meeting.md) | 9/29 기준. 결정 사항이 이후 바뀌었습니다 |
 
 ## 1. 실행 방법
 
@@ -262,7 +274,7 @@ faster-whisper 로 넘어갑니다.** 팀원마다 파이썬 버전이 달라도
 `server/search.py` 의 `WEIGHTS` 가 마스터 문서 단계 12 의 비중 표입니다.
 **⚠ 아래 표의 숫자가 그대로 적용되지 않습니다** — 기본 설정(`IMAGE_EMBED_BACKEND=none`)에서는
 그림 좌표 몫이 나머지 둘에 재배분되어 세 번째 칸이 항상 0 이 됩니다.
-실제 적용값과 그 부작용은 [`docs/search-logic.md`](docs/search-logic.md) 3장을 보세요.
+실제 적용값과 그 부작용은 [`docs/search-logic.md`](docs/search-logic.md) 3장을 보세요 (9/22 기준이라 일부는 이미 고쳐졌습니다 — [`docs/PROGRESS.md`](docs/PROGRESS.md) 3장 참고).
 
 
 ```python
