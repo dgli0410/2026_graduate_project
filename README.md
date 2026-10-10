@@ -53,6 +53,7 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 | [`docs/eval-guide.md`](docs/eval-guide.md) | **질문셋·평가셋 만드는 법** (질문 작성자·라벨러용 작업 지침) |
 | [`docs/team-meeting.md`](docs/team-meeting.md) | 팀 회의 자료 — 진행 현황과 결정할 것 |
 | [`docs/fixes-20261010.md`](docs/fixes-20261010.md) | 10/09~10 수정 기록 — 조용히 틀리던 버그 3개 + 첫 성능 측정 |
+| [`docs/meeting-brief-20261010.md`](docs/meeting-brief-20261010.md) | 10/10 회의 브리핑 (붙여넣기용, 그 자체로 완결) |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
 
 ## 1. 실행 방법
