@@ -144,3 +144,16 @@ td.win { color: var(--ok); font-weight: 700; }
 .recipe-frame { width: 54px; height: 96px; object-fit: cover; border-radius: 6px; flex-shrink: 0; background: var(--line); }
 .recipe-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; align-items: flex-start; }
 .recipe-label { font-size: 13px; }
+
+/* 검색 결과 — 영상 목록 + 드롭다운 */
+.video-row { border: 1px solid var(--line); border-radius: 8px; background: var(--card); overflow: hidden; }
+.video-head { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px; background: none; border: 0; border-radius: 0; text-align: left; }
+.video-head:hover { background: var(--line); }
+.video-thumb { width: 52px; height: 38px; object-fit: cover; border-radius: 4px; flex-shrink: 0; background: var(--line); }
+.video-text { flex: 1; min-width: 0; }
+.video-sub { font-size: 11px; color: var(--muted); margin: 2px 0 0; }
+.chev { color: var(--muted); flex-shrink: 0; transition: transform .15s; }
+.chev.open { transform: rotate(180deg); }
+.video-body { display: flex; flex-direction: column; gap: 6px; padding: 0 8px 8px; }
+.video-body .scene { background: var(--bg); }
+.video-body .empty { padding: 12px 0; }

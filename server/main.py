@@ -96,6 +96,13 @@ class SearchRequest(BaseModel):
     video_id: str | None = None
     playlist_id: str | None = None
     top_k: int = Field(default=SEARCH_TOP_K, ge=1, le=20)
+    # 검색 결과만 필요하고 AI 답변은 필요 없을 때 끕니다.
+    # ⚠ 답변 생성은 Gemini 호출 1회입니다(무료 티어 하루 20회). 사이드패널에서 영상
+    #   드롭다운을 펼칠 때마다 그 영상만 다시 검색하는데, 거기서도 답변을 만들면
+    #   펼친 횟수만큼 할당량이 날아갑니다. 그 요청은 with_answer=false 로 보냅니다.
+    with_answer: bool = True
+    # 결과에 담을 영상 개수(scenes 가 아니라 videos 의 길이).
+    video_limit: int = Field(default=5, ge=1, le=50)
 
 
 class PlaylistRequest(BaseModel):
@@ -476,4 +483,6 @@ def do_search(req: SearchRequest, user_id: str = Depends(current_user)) -> dict[
         video_id=req.video_id,
         playlist_id=req.playlist_id,
         top_k=req.top_k,
+        with_answer=req.with_answer,
+        video_limit=req.video_limit,
     )

@@ -271,6 +271,14 @@ def dedup_adjacent(
 
 
 def group_by_video(hits: list[dict[str, Any]], limit: int = 5) -> list[dict[str, Any]]:
+    """후보 장면을 영상별로 묶습니다. 영상 순서는 그 영상의 **최고 점수** 순입니다.
+
+    ⚠ `candidate_count` 는 "질문에 맞는 장면이 몇 개" 가 아니라 **후보 목록에 몇 개가
+      들어왔는지** 입니다. 후보는 점수를 매기기 전 단계라(영상당 40개까지), 카드가
+      적은 영상은 사실상 전부가 여기 들어옵니다. 화면에 "장면 3개 일치" 처럼 쓰면
+      숫자가 부풀려집니다. 실제로 몇 개가 쓸 만한지는 그 영상만 다시 검색해야 압니다
+      (`search(..., video_id=...)`). 예전 이름은 오해를 불러서 바꿨습니다.
+    """
     grouped: dict[str, dict[str, Any]] = {}
     for hit in hits:
         vid = hit.get("video_id", "")
@@ -282,12 +290,12 @@ def group_by_video(hits: list[dict[str, Any]], limit: int = 5) -> list[dict[str,
                 "video_id": vid,
                 "title": hit.get("title", ""),
                 "score": hit["score"],
-                "scene_count": 1,
+                "candidate_count": 1,
                 "best_time": float(hit.get("start_time", 0)),
                 "thumbnail": f"https://img.youtube.com/vi/{vid}/hqdefault.jpg",
             }
         else:
-            current["scene_count"] += 1
+            current["candidate_count"] += 1
             if hit["score"] > current["score"]:
                 current["score"] = hit["score"]
                 current["best_time"] = float(hit.get("start_time", 0))
@@ -354,6 +362,7 @@ def search(
     top_k: int = 5,
     with_answer: bool = True,
     condition: str | None = None,
+    video_limit: int = 5,
 ) -> dict[str, Any]:
     query = query.strip()
     if not query:
@@ -399,6 +408,6 @@ def search(
         "weights": weights,
         "answer": generate_answer(query, scenes) if with_answer else "",
         "scenes": scenes[:top_k] if intent != "summary" else scenes,
-        "videos": group_by_video(ranked),
+        "videos": group_by_video(ranked, limit=video_limit),
         "top_score": scenes[0]["score"] if scenes else 0.0,
     }

@@ -373,8 +373,22 @@ async function jumpTo(videoId, seekTime, fallbackUrl) {
 }
 
 // --- 검색 -----------------------------------------------------------------
+//
+// 검색 결과는 **영상 목록**을 먼저 보여주고, 영상을 펼쳐야 그 안 장면이 나옵니다.
+// 예전에는 여러 영상의 장면이 평평하게 섞여 나와, 같은 제목이 반복되고 어느 영상에서
+// 걸린 것인지 알기 어려웠습니다.
+//
+// 펼칠 때는 **그 영상만 다시 검색**합니다(같은 엔드포인트에 `video_id` 를 넣습니다).
+// 전체 검색이 돌려주는 장면은 영상들이 top_k 개를 나눠 갖는 것이라, 영상 하나당
+// 1~2개밖에 안 남아 드롭다운이 비어 보입니다.
+//
+// ⚠ 펼침 요청은 반드시 `with_answer: false` 입니다. AI 답변 생성은 Gemini 호출
+//   1회이고 무료 티어가 하루 20회인데, 드롭다운에서는 그 답변을 쓰지도 않습니다.
 
-function sceneCard(scene) {
+const VIDEO_LIMIT = 10; // 검색 결과에 늘어놓을 영상 수
+const SCENES_PER_VIDEO = 5; // 영상 하나를 펼쳤을 때 보여줄 장면 수
+
+function sceneCard(scene, showTitle = true) {
   const box = document.createElement("div");
   box.className = "scene";
 
@@ -390,9 +404,11 @@ function sceneCard(scene) {
     head.appendChild(thumb);
   }
 
+  // 드롭다운 안에서는 제목이 바로 위 영상 줄과 같아서 뺍니다.
+  // 비교 탭은 영상이 뒤섞여 나오므로 기본값(제목 표시)을 그대로 씁니다.
   const label = document.createElement("div");
   label.className = "card-title";
-  label.textContent = scene.title || scene.video_id;
+  label.textContent = showTitle ? scene.title || scene.video_id : "";
   head.appendChild(label);
 
   const jump = document.createElement("button");
@@ -423,6 +439,87 @@ function sceneCard(scene) {
   return box;
 }
 
+/** 검색 결과 한 줄 = 영상 하나. 누르면 그 영상 안 장면이 펼쳐집니다. */
+function videoRow(video, query) {
+  const box = document.createElement("div");
+  box.className = "video-row";
+
+  const head = document.createElement("button");
+  head.className = "video-head";
+  head.setAttribute("aria-expanded", "false");
+
+  const thumb = document.createElement("img");
+  thumb.className = "video-thumb";
+  thumb.src = video.thumbnail;
+  thumb.alt = "";
+  head.appendChild(thumb);
+
+  const text = document.createElement("div");
+  text.className = "video-text";
+  const title = document.createElement("div");
+  title.className = "card-title";
+  title.textContent = video.title || video.video_id;
+  text.appendChild(title);
+  const sub = document.createElement("div");
+  sub.className = "video-sub";
+  // ⚠ 여기에 `candidate_count` 를 "장면 N개" 로 쓰면 안 됩니다. 그 값은 점수를 매기기
+  //   전 후보 수라 실제보다 부풀려집니다. 진짜 개수는 펼친 뒤에야 알 수 있습니다.
+  sub.textContent = `가장 잘 맞는 지점 ${fmtTime(video.best_time)}`;
+  text.appendChild(sub);
+  head.appendChild(text);
+
+  const chev = document.createElement("span");
+  chev.className = "chev";
+  chev.textContent = "▾";
+  head.appendChild(chev);
+  box.appendChild(head);
+
+  const body = document.createElement("div");
+  body.className = "video-body hidden";
+  box.appendChild(body);
+
+  let loaded = false;
+  head.addEventListener("click", async () => {
+    const open = !body.classList.toggle("hidden");
+    head.setAttribute("aria-expanded", String(open));
+    chev.classList.toggle("open", open);
+    if (!open || loaded) return; // 접을 때와 이미 불러온 뒤에는 다시 요청하지 않습니다
+    loaded = true;
+    body.innerHTML = "<p class='empty'>장면 찾는 중...</p>";
+    try {
+      const data = await api("/api/search", {
+        method: "POST",
+        body: JSON.stringify({
+          query,
+          video_id: video.video_id,
+          top_k: SCENES_PER_VIDEO,
+          with_answer: false, // Gemini 호출을 막습니다
+          video_limit: 1,
+        }),
+      });
+      body.innerHTML = "";
+      if (!data.scenes.length) {
+        body.innerHTML = "<p class='empty'>이 영상에서는 맞는 장면을 찾지 못했습니다.</p>";
+        return;
+      }
+      const count = document.createElement("p");
+      count.className = "video-sub";
+      count.textContent = `장면 ${data.scenes.length}개`;
+      body.appendChild(count);
+      data.scenes.forEach((scene) => body.appendChild(sceneCard(scene, false)));
+    } catch (err) {
+      loaded = false; // 실패했으면 다시 펼칠 때 한 번 더 시도합니다
+      body.innerHTML = "";
+      const msg = document.createElement("p");
+      msg.className = "empty";
+      msg.textContent = `장면을 불러오지 못했습니다: ${err.message}`;
+      body.appendChild(msg);
+    }
+  });
+
+  return box;
+}
+
 async function runSearch() {
   const query = $("search-input").value.trim();
   if (!query) return;
@@ -433,17 +530,22 @@ async function runSearch() {
   answer.classList.remove("hidden");
 
   try {
-    const body = { query, top_k: 5 };
+    const body = { query, top_k: 5, video_limit: VIDEO_LIMIT };
     if ($("scope-playlist").checked && selectedPlaylist) body.playlist_id = selectedPlaylist;
     const data = await api("/api/search", { method: "POST", body: JSON.stringify(body) });
 
     answer.textContent = data.answer || "";
     answer.classList.toggle("hidden", !data.answer);
-    if (data.scenes.length === 0) {
-      results.innerHTML = "<p class='empty'>맞는 장면을 찾지 못했습니다.</p>";
+
+    // "이런 영상 찾아줘" 는 영상을 고르는 질문이라 1개만 내놓습니다.
+    // "간장 넣는 장면 찾아줘" 처럼 지점을 묻는 질문은 걸린 영상을 전부 늘어놓습니다.
+    // 이 판별은 서버가 이미 해서 `intent` 로 내려줍니다(search.py · detect_intent).
+    const videos = data.intent === "video" ? data.videos.slice(0, 1) : data.videos;
+    if (!videos.length) {
+      results.innerHTML = "<p class='empty'>맞는 영상을 찾지 못했습니다.</p>";
       return;
     }
-    data.scenes.forEach((scene) => results.appendChild(sceneCard(scene)));
+    videos.forEach((video) => results.appendChild(videoRow(video, query)));
   } catch (err) {
     answer.textContent = `검색 실패: ${err.message}`;
   }
