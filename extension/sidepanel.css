@@ -157,3 +157,4 @@ td.win { color: var(--ok); font-weight: 700; }
 .video-body { display: flex; flex-direction: column; gap: 6px; padding: 0 8px 8px; }
 .video-body .scene { background: var(--bg); }
 .video-body .empty { padding: 12px 0; }
+.more-btn { width: 100%; color: var(--muted); border-style: dashed; }

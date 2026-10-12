@@ -388,6 +388,15 @@ async function jumpTo(videoId, seekTime, fallbackUrl) {
 const VIDEO_LIMIT = 10; // 검색 결과에 늘어놓을 영상 수
 const SCENES_PER_VIDEO = 5; // 영상 하나를 펼쳤을 때 보여줄 장면 수
 
+// 1위에 견줘 이 비율보다 낮은 영상은 접어 둡니다.
+//
+// ⚠ 이것은 **보기 정리이지 "관련 없음" 판정이 아닙니다.** 화면에 오는 score 는 후보
+//   중 최고를 1.0 으로 맞춰 다시 계산한 값이라, 아무것도 안 맞는 질문에서도 1위는
+//   만점이 됩니다(실측: "자동차 엔진 오일 교환하는 장면" → 1위 1.00).
+//   진짜 "관련 장면 없음" 은 정규화 전 유사도로 따로 재야 하고, 그것이 멘토 자문
+//   3번입니다(지금 성적 0/12). 이 줄을 그 해결책으로 착각하면 안 됩니다.
+const RELATED_CUTOFF = 0.25;
+
 function sceneCard(scene, showTitle = true) {
   const box = document.createElement("div");
   box.className = "scene";
@@ -545,7 +554,28 @@ async function runSearch() {
       results.innerHTML = "<p class='empty'>맞는 영상을 찾지 못했습니다.</p>";
       return;
     }
-    videos.forEach((video) => results.appendChild(videoRow(video, query)));
+
+    // 1위보다 한참 낮은 영상은 접어 둡니다(RELATED_CUTOFF 설명 참고).
+    // videos 는 서버가 점수 내림차순으로 보내므로 잘리는 지점이 곧 경계입니다.
+    const top = videos[0].score || 0;
+    let cut = videos.length;
+    if (top > 0) {
+      cut = videos.findIndex((v) => v.score < top * RELATED_CUTOFF);
+      if (cut < 0) cut = videos.length;
+    }
+    videos.slice(0, cut).forEach((video) => results.appendChild(videoRow(video, query)));
+
+    const weak = videos.slice(cut);
+    if (weak.length) {
+      const more = document.createElement("button");
+      more.className = "ghost small more-btn";
+      more.textContent = `관련도 낮은 결과 ${weak.length}개 더 보기`;
+      more.addEventListener("click", () => {
+        more.remove();
+        weak.forEach((video) => results.appendChild(videoRow(video, query)));
+      });
+      results.appendChild(more);
+    }
   } catch (err) {
     answer.textContent = `검색 실패: ${err.message}`;
   }
