@@ -546,6 +546,18 @@ async function runSearch() {
     answer.textContent = data.answer || "";
     answer.classList.toggle("hidden", !data.answer);
 
+    // 근거가 약하면 알려줍니다 (멘토 자문 3번).
+    // 결과를 감추지는 않습니다 — 서버가 쓰는 기준(정규화 전 유사도 0.52)은 답이 있는
+    // 질문도 48개 중 6개를 잘못 걸러냅니다. 감추면 그 6개를 영영 못 보게 되지만,
+    // 경고로 두면 피해가 "불필요한 한 줄" 로 끝납니다.
+    if (data.low_confidence) {
+      const warn = document.createElement("p");
+      warn.className = "warn";
+      warn.textContent =
+        "저장된 장면 중에 확실히 맞는 것을 찾지 못했습니다. 아래는 그나마 가까운 결과입니다.";
+      results.appendChild(warn);
+    }
+
     // "이런 영상 찾아줘" 는 영상을 고르는 질문이라 1개만 내놓습니다.
     // "간장 넣는 장면 찾아줘" 처럼 지점을 묻는 질문은 걸린 영상을 전부 늘어놓습니다.
     // 이 판별은 서버가 이미 해서 `intent` 로 내려줍니다(search.py · detect_intent).

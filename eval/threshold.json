@@ -1,0 +1,178 @@
+{
+  "answered": [
+    0.4871,
+    0.6321,
+    0.5638,
+    0.6274,
+    0.6227,
+    0.6361,
+    0.5712,
+    0.6701,
+    0.5927,
+    0.6074,
+    0.6484,
+    0.6042,
+    0.583,
+    0.6341,
+    0.5666,
+    0.5738,
+    0.6145,
+    0.5812,
+    0.6519,
+    0.4814,
+    0.4318,
+    0.6528,
+    0.5443,
+    0.5676,
+    0.5742,
+    0.5552,
+    0.626,
+    0.5382,
+    0.6512,
+    0.5626,
+    0.542,
+    0.6053,
+    0.5222,
+    0.4572,
+    0.6282,
+    0.6306,
+    0.6571,
+    0.4569,
+    0.5406,
+    0.507,
+    0.683,
+    0.544,
+    0.6676,
+    0.5991,
+    0.6063,
+    0.5823,
+    0.65,
+    0.6242
+  ],
+  "missing_scene": [
+    0.496,
+    0.5676,
+    0.5054,
+    0.4851,
+    0.5372,
+    0.5269,
+    0.4833,
+    0.5693,
+    0.3846,
+    0.5015,
+    0.4764,
+    0.5767
+  ],
+  "offtopic": [
+    0.4619,
+    0.4203,
+    0.3992,
+    0.3855,
+    0.422,
+    0.5058,
+    0.4804,
+    0.4621,
+    0.445,
+    0.4452
+  ],
+  "curve": [
+    {
+      "threshold": 0.4,
+      "reject_b": 1,
+      "reject_a": 2,
+      "wrong_reject": 0,
+      "precision": 1.0
+    },
+    {
+      "threshold": 0.42,
+      "reject_b": 1,
+      "reject_a": 2,
+      "wrong_reject": 0,
+      "precision": 1.0
+    },
+    {
+      "threshold": 0.44,
+      "reject_b": 1,
+      "reject_a": 4,
+      "wrong_reject": 1,
+      "precision": 0.833
+    },
+    {
+      "threshold": 0.46,
+      "reject_b": 1,
+      "reject_a": 6,
+      "wrong_reject": 3,
+      "precision": 0.7
+    },
+    {
+      "threshold": 0.48,
+      "reject_b": 2,
+      "reject_a": 8,
+      "wrong_reject": 3,
+      "precision": 0.769
+    },
+    {
+      "threshold": 0.5,
+      "reject_b": 5,
+      "reject_a": 9,
+      "wrong_reject": 5,
+      "precision": 0.737
+    },
+    {
+      "threshold": 0.52,
+      "reject_b": 7,
+      "reject_a": 10,
+      "wrong_reject": 6,
+      "precision": 0.739
+    },
+    {
+      "threshold": 0.54,
+      "reject_b": 9,
+      "reject_a": 10,
+      "wrong_reject": 8,
+      "precision": 0.704
+    },
+    {
+      "threshold": 0.56,
+      "reject_b": 9,
+      "reject_a": 10,
+      "wrong_reject": 13,
+      "precision": 0.594
+    },
+    {
+      "threshold": 0.58,
+      "reject_b": 12,
+      "reject_a": 10,
+      "wrong_reject": 20,
+      "precision": 0.524
+    },
+    {
+      "threshold": 0.6,
+      "reject_b": 12,
+      "reject_a": 10,
+      "wrong_reject": 25,
+      "precision": 0.468
+    },
+    {
+      "threshold": 0.62,
+      "reject_b": 12,
+      "reject_a": 10,
+      "wrong_reject": 30,
+      "precision": 0.423
+    },
+    {
+      "threshold": 0.64,
+      "reject_b": 12,
+      "reject_a": 10,
+      "wrong_reject": 39,
+      "precision": 0.361
+    },
+    {
+      "threshold": 0.66,
+      "reject_b": 12,
+      "reject_a": 10,
+      "wrong_reject": 45,
+      "precision": 0.328
+    }
+  ]
+}
