@@ -575,6 +575,10 @@ async function runSearch() {
       cut = videos.findIndex((v) => v.score < top * RELATED_CUTOFF);
       if (cut < 0) cut = videos.length;
     }
+    // 근거가 약하다고 말해놓고 영상을 열 개 늘어놓으면 말과 화면이 어긋납니다.
+    // 엉뚱한 질문은 점수가 평평해서 위 비율 컷오프가 거의 안 걸리기 때문에,
+    // 그럴 때는 따로 좁힙니다. 나머지는 "더 보기" 뒤에 그대로 남습니다.
+    if (data.low_confidence) cut = Math.min(cut, 2);
     videos.slice(0, cut).forEach((video) => results.appendChild(videoRow(video, query)));
 
     const weak = videos.slice(cut);

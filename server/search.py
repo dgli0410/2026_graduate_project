@@ -20,6 +20,7 @@ from server.config import (
     LEXICAL_IDF,
     NO_ANSWER_THRESHOLD,
     SEEK_LEAD_SECONDS,
+    SEEK_LOCALIZE,
 )
 
 # (글 좌표, 정확한 단어, 그림 좌표)
@@ -161,6 +162,47 @@ def lexical_score(
         return 0.0
     got = sum(weights.get(token, 0.0) for token in tokens if token in text)
     return got / denom
+
+
+def localize_seek(query: str, hit: dict[str, Any], idf: dict[str, float]) -> None:
+    """병합 카드 안에서 **어느 4초 조각으로 보낼지** 다시 고릅니다. 자문 1번 결론.
+
+    병합은 검색을 좋게 합니다 — 조각난 행위가 한 장으로 모여 정답을 품은 카드를
+    더 많이 찾아옵니다(실측 65/94 → 73/94). 그런데 카드가 길어지면 이동 지점이
+    카드 맨 앞으로 밀려 사용자가 더 기다립니다(시점 오차 2.8초 → 3.5초).
+    **검색은 합친 카드로, 이동은 원래 조각으로** 하면 둘 다 가집니다.
+
+    고르는 기준은 질의 단어가 실제로 들어 있는 조각(IDF 가중)입니다. 어느 조각에도
+    없으면(질의가 말에만 나오고 글자로는 없는 경우 등) **카드 맨 앞을 그대로 둡니다**
+    — 근거 없이 뒤로 보내면 정답을 지나칠 수 있고, 그건 비대칭 허용 오차가 가장
+    싫어하는 실수입니다.
+
+    `hit` 의 start_time 을 바꾸지 않습니다. 카드 구간은 그대로 보여주고
+    **이동 지점(seek_anchor)만** 조정합니다.
+    """
+    parts = hit.get("parts")
+    if not parts:
+        return
+    tokens = TOKEN_RE.findall(query)
+    if not tokens:
+        return
+
+    best, best_start = 0.0, None
+    for part in parts:
+        text = str(part.get("text", ""))
+        if not text:
+            continue
+        if idf:
+            denom = sum(idf.get(t, 0.0) for t in tokens)
+            got = sum(idf.get(t, 0.0) for t in tokens if t in text)
+            score = got / denom if denom > 0 else 0.0
+        else:
+            score = sum(1 for t in tokens if t in text) / len(tokens)
+        if score > best:
+            best, best_start = score, float(part["start_time"])
+    if best_start is not None:
+        hit["seek_anchor"] = best_start
+        hit["localized"] = True
 
 
 def _merge(pools: list[list[dict[str, Any]]]) -> dict[str, dict[str, Any]]:
@@ -394,8 +436,15 @@ def search(
     scene_limit = max(top_k, 10) if intent == "summary" else top_k
     scenes = dedup_adjacent(ranked, top_k=scene_limit)
 
+    # 이동 지점 고르기용 IDF. 코퍼스가 캐시돼 있어 다시 계산해도 쌉니다.
+    idf_for_seek = idf_weights(user_id, TOKEN_RE.findall(query)) if LEXICAL_IDF else {}
+
     for scene in scenes:
-        start = float(scene.get("start_time", 0))
+        # 병합 카드면 그 안에서 질의에 맞는 4초 조각을 골라 이동 지점을 당깁니다.
+        # 병합을 안 썼거나 근거가 없으면 seek_anchor 가 없어 카드 시작을 그대로 씁니다.
+        if SEEK_LOCALIZE:
+            localize_seek(query, scene, idf_for_seek)
+        start = float(scene.get("seek_anchor", scene.get("start_time", 0)))
         # 마스터 문서 단계 13 · 1.5초 일찍 보냅니다.
         scene["seek_time"] = round(max(0.0, start - SEEK_LEAD_SECONDS), 2)
         scene["youtube_fallback_url"] = (

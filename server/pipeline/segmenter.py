@@ -155,6 +155,22 @@ def merge_segments(
             "ocr_text": _join(s.get("ocr_text", "") for s in group),
             "caption": _join(s.get("caption", "") for s in group),
             "frame_path": "",
+            # ⚠ 합치기 **전** 4초 조각을 그대로 들고 갑니다.
+            #   병합하면 검색은 좋아지는데(정답을 품은 카드 69%→78%) 이동 지점이
+            #   카드 맨 앞으로 밀려 시점 오차가 2.8초→3.5초로 나빠집니다. 그래서
+            #   **검색은 합친 카드로 하고 이동은 이 조각으로** 합니다
+            #   (`search.localize_seek`). 자문 1번 결론, PROGRESS.md 5-5장.
+            "parts": [
+                {
+                    "start_time": float(s["start_time"]),
+                    "end_time": float(s["end_time"]),
+                    "text": " ".join(
+                        str(s.get(k, "")) for k in ("caption", "asr_text", "ocr_text")
+                    ).strip(),
+                    "frame_path": s.get("frame_path", ""),
+                }
+                for s in group
+            ],
         }
         # 대표 프레임은 합쳐진 구간의 가운데로 다시 고릅니다.
         if frames:

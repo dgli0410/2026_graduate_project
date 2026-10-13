@@ -85,26 +85,38 @@ def build(t: float, plan: list[tuple], cache: dict) -> int:
     return cards
 
 
-def ask(user_id: str, q: ev.Question, t: float) -> list[dict[str, Any]]:
+def ask(user_id: str, q: ev.Question, t: float, localize: bool = True) -> list[dict[str, Any]]:
+    """제품과 같은 검색 함수. `localize` 가 꺼지면 이동 지점을 카드 맨 앞으로 둡니다.
+
+    자문 1번 결론을 검증하려면 **합치기만 한 것**과 **합치고 조각으로 보내는 것**을
+    갈라 봐야 합니다. `search()` 는 config 를 보므로, 여기서만 잠깐 바꿔 끕니다.
+    """
     from server import search as search_mod
 
-    return search_mod.search(
-        user_id, q.text, video_id=q.video_id, top_k=ev.TOP_K,
-        with_answer=False, condition=key_of(t),
-    )["scenes"][: ev.TOP_K]
+    saved = search_mod.SEEK_LOCALIZE
+    search_mod.SEEK_LOCALIZE = localize
+    try:
+        return search_mod.search(
+            user_id, q.text, video_id=q.video_id, top_k=ev.TOP_K,
+            with_answer=False, condition=key_of(t),
+        )["scenes"][: ev.TOP_K]
+    finally:
+        search_mod.SEEK_LOCALIZE = saved
 
 
-def measure(user_id: str, questions: list[ev.Question], t: float, cards: int) -> dict:
+def measure(user_id: str, questions: list[ev.Question], t: float, cards: int,
+            localize: bool = True) -> dict:
     answered = [q for q in questions if q.spans]
     per_type: dict[str, list[dict]] = defaultdict(list)
     rows = []
     for q in answered:
-        s = ev.score(q, ask(user_id, q, t))
+        s = ev.score(q, ask(user_id, q, t, localize))
         per_type[q.q_type].append(s)
         rows.append({"qid": q.qid, "q_type": q.q_type, **s})
     overall = [s for lst in per_type.values() for s in lst]
     return {
         "threshold": t,
+        "localize": localize,
         "cards": cards,
         "questions": len(answered),
         "overall": {m: ev.mean([s[m] for s in overall]) for m in METRICS},
@@ -121,20 +133,23 @@ def show(results: list[dict]) -> None:
     print("\n" + "=" * 74)
     print("의미 단위 병합 — 임계값을 올릴수록 덜 합칩니다 (0 = 고정 분할 기준선)")
     print("=" * 74)
-    print(f"{'임계값':>7}{'장면 카드':>10}{'nDCG@5':>9}{'기준대비':>10}"
+    print(f"{'임계값':>12}{'장면 카드':>10}{'nDCG@5':>9}{'기준대비':>10}"
           f"{'Recall@5':>10}{'1위적중':>9}")
     print("-" * 74)
     for r in results:
         o = r["overall"]
         gap = "" if r is base else f"{o['ndcg'] - base['overall']['ndcg']:+.3f}"
         label = "0 (기준선)" if r["threshold"] == 0 else f"{r['threshold']:.2f}"
-        print(f"{label:>7}{r['cards']:>10}{o['ndcg']:>9.3f}{gap:>10}"
+        if r["threshold"]:
+            label += " 조각" if r["localize"] else " 앞"
+        print(f"{label:>12}{r['cards']:>10}{o['ndcg']:>9.3f}{gap:>10}"
               f"{o['recall']:>10.3f}{o['hit1']:>9.3f}")
 
     print(f"\n{'유형별 nDCG@5':<16}" + "".join(f"{t:>12}" for t in ev.TYPES))
     print("-" * 74)
     for r in results:
-        label = "0 (기준선)" if r["threshold"] == 0 else f"{r['threshold']:.2f}"
+        label = "0 (기준선)" if r["threshold"] == 0 else (
+            f"{r['threshold']:.2f} " + ("조각" if r["localize"] else "앞"))
         cells = "".join(
             f"{r['by_type'][t]['ndcg']:>12.3f}" if t in r["by_type"] else f"{'-':>12}"
             for t in ev.TYPES
@@ -212,10 +227,15 @@ def main() -> int:
     for t in THRESHOLDS:
         started = time.time()
         cards = build(t, plan, cache)
-        r = measure(user_id, questions, t, cards)
-        results.append(r)
-        print(f"  임계값 {t:.2f}  카드 {cards:>4}개  nDCG@5 {r['overall']['ndcg']:.3f}"
-              f"  {time.time() - started:.0f}초")
+        # 합치기만 한 것 / 합치고 조각으로 보내는 것을 둘 다 잽니다.
+        # t=0 은 조각이 없어 둘이 같으므로 한 번만 잽니다.
+        modes = [False] if t == 0 else [False, True]
+        for loc in modes:
+            r = measure(user_id, questions, t, cards, loc)
+            results.append(r)
+            tag = "조각이동" if loc else "카드앞"
+            print(f"  임계값 {t:.2f} [{tag}]  카드 {cards:>4}개"
+                  f"  nDCG@5 {r['overall']['ndcg']:.3f}  {time.time() - started:.0f}초")
 
     show(results)
     Path(args.out).write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")

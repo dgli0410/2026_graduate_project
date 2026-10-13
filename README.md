@@ -79,6 +79,8 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 | [`docs/fixes-20261005.md`](docs/fixes-20261005.md) | 박현준 10/05 수정 상세 |
 | [`docs/fixes-20261010.md`](docs/fixes-20261010.md) | 이동현 10/09~10 수정 상세 |
 | [`eval/ablation.json`](eval/ablation.json) | 제거법 15조건 원자료 (문항별 점수) |
+| [`eval/merge_experiment.json`](eval/merge_experiment.json) | 의미 단위 병합 실험 원자료 |
+| [`eval/threshold.json`](eval/threshold.json) | 거절 임계값 곡선 원자료 |
 | [`SigLIP2_실험기록_20260914.md`](SigLIP2_실험기록_20260914.md) | SigLIP2 파인튜닝 실험 전문 |
 | [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 자문 원문과 그때 세운 계획 |
 | [`docs/meeting-brief-20261010.md`](docs/meeting-brief-20261010.md) | 10/10 회의 브리핑 (붙여넣기용) |

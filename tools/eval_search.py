@@ -99,7 +99,13 @@ def load(path: Path, known: set[str]) -> tuple[list[Question], list[str]]:
 
 def ask(user_id: str, question: Question, baseline: str | None) -> list[dict[str, Any]]:
     """그 영상 안에서만 검색한다. 평가셋이 질문마다 정답 영상을 정해두기 때문이다."""
-    body = {"query": question.text, "video_id": question.video_id, "top_k": TOP_K}
+    # ⚠ with_answer=False — 답변 생성은 Gemini 호출 1회인데 평가에 쓰지 않습니다.
+    #   예전에는 이게 빠져 있어서 한 번 돌릴 때마다 질문 수만큼(약 60회) 호출했고,
+    #   무료 티어 하루 20회를 평가가 다 먹었습니다.
+    body = {
+        "query": question.text, "video_id": question.video_id,
+        "top_k": TOP_K, "with_answer": False,
+    }
     data = json.dumps(body).encode()
     req = urllib.request.Request(
         API, data=data, method="POST",

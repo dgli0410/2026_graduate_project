@@ -47,6 +47,8 @@ python -m tools.e2e_test              # 서버 띄운 뒤, 전 구간
 python -m tools.run_condition --list  # 조건·영상 목록
 python -m tools.ablation              # 제거법 계획 (서버 끄고, --yes 로 실행)
 python -m tools.cost_report           # 영상당 처리 시간·호출 수 (자문 4)
+python -m tools.merge_experiment      # 의미 단위 병합 전후 (자문 1, 서버 끄고)
+python -m tools.threshold_sweep       # 거절 임계값 곡선 (자문 3, 서버 켜고)
 ```
 
 ## 코드 스타일
@@ -55,14 +57,18 @@ python -m tools.cost_report           # 영상당 처리 시간·호출 수 (자
 - 파일 끝 줄바꿈은 LF
 
 ## 지금 상태 / 다음 할 일
-- 전 구간 동작. 색인은 전부 로컬 모델(faster-whisper / EasyOCR / BGE-M3 1024차원 / SigLIP2),
+- **멘토 자문 보완 5가지가 전부 처리됐습니다** (`docs/PROGRESS.md` 5-2~5-6장).
+  전부 "좋아졌다" 는 아닙니다 — 자문 1(병합)은 **해보고 채택하지 않았고 그게 결과**입니다
+- 색인은 전부 로컬 모델(faster-whisper / EasyOCR / BGE-M3 1024차원 / SigLIP2),
   **장면 설명만 Gemini.** 저장된 영상 18개 · 장면 카드 203개 (`eval/video_list.md`)
-- 채움률: 말 80% · 자막 94% · **설명 55%** (할당량으로 5개 영상에 캡션 없음)
-- 평가셋 질문 64개 / 라벨 113줄 (`eval/labels_merged.csv`, 시트 `eval/labeling_sheet.xlsx`).
-  측정은 `python -m tools.eval_search --all`
-- 첫 측정 nDCG@5 = **0.749** (기준선 0.724). **설명 55% 상태라 확정값이 아닙니다**
-- 제거법 15조건 전수 완료(음성·자막·설명·그림). **SigLIP 단독 0.520 은 무작위 0.480 과
-  구별되지 않습니다** — 영상 내 순간 찾기에는 거의 기여하지 않습니다. 재료·분량은 자막
-  위주가 유의하게 낫고 시각적 상태는 정반대. 상세 `docs/PROGRESS.md` 5-2장
-- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 질문 늘리기, 그다음 캡션 5개 복구
+- 채움률: 말 80% · 자막 94% · **설명 55%** (할당량으로 5개 영상에 캡션 없음).
+  **지금 모든 수치가 이 상태에서 잰 것이라 확정값이 아닙니다**
+- 평가셋 질문 64개 / 라벨 113줄. 현행 nDCG@5 **0.756** (기준선 음성만 0.728, +0.028)
+  측정: `python -m tools.eval_search --all` · 최신 결과 `eval/result_20261013.json`
+- 자문 3 적용 중: `NO_ANSWER_THRESHOLD=0.52` 로 근거가 약하면 경고를 띄웁니다
+- 자문 1 결과: `MERGE_SIMILARITY=0` **(꺼짐)**. 병합은 검색을 좋게 하지만 top-5 가 짚는
+  정답 수가 줄어 손해였고, 오라클(천장)까지 재서 확인했습니다. 코드는 남겨 뒀습니다
+- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 캡션 5개 복구 후 재측정
 - ⚠ `tools.make_labeling_sheet --force` 는 지금 시트를 덮어씁니다 (라벨 113줄이 들어 있음)
+- ⚠ 한글 질의로 API 를 시험할 때 PowerShell `Invoke-RestMethod` 는 UTF-8 로 안 보냅니다.
+  Python `urllib` 로 하세요 (PowerShell 로 재면 유사도가 엉뚱하게 낮게 나옵니다)

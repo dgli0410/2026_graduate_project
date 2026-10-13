@@ -120,22 +120,26 @@ def upsert_segments(
         }
         if use_image:
             vector[IMAGE_VECTOR] = np.asarray(image_vectors[idx], dtype=np.float32).tolist()
+        payload = {
+            "user_id": user_id,
+            "video_id": video_id,
+            "segment_id": segment["segment_id"],
+            "title": title,
+            "start_time": float(segment["start_time"]),
+            "end_time": float(segment["end_time"]),
+            "asr_text": segment.get("asr_text", ""),
+            "ocr_text": segment.get("ocr_text", ""),
+            "caption": segment.get("caption", ""),
+            "frame_path": segment.get("frame_path", ""),
+        }
+        # 병합 카드만 갖습니다 — 합치기 전 4초 조각. 이동 지점을 이 안에서 다시 고릅니다.
+        if segment.get("parts"):
+            payload["parts"] = segment["parts"]
         points.append(
             models.PointStruct(
                 id=_point_id(user_id, segment["segment_id"]),
                 vector=vector,
-                payload={
-                    "user_id": user_id,
-                    "video_id": video_id,
-                    "segment_id": segment["segment_id"],
-                    "title": title,
-                    "start_time": float(segment["start_time"]),
-                    "end_time": float(segment["end_time"]),
-                    "asr_text": segment.get("asr_text", ""),
-                    "ocr_text": segment.get("ocr_text", ""),
-                    "caption": segment.get("caption", ""),
-                    "frame_path": segment.get("frame_path", ""),
-                },
+                payload=payload,
             )
         )
     if points:

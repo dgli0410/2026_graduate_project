@@ -101,6 +101,18 @@ SEARCH_TOP_K = int(os.getenv("SEARCH_TOP_K", "5"))
 #
 # **0 이면 꺼집니다**(예전 동작).
 NO_ANSWER_THRESHOLD = float(os.getenv("NO_ANSWER_THRESHOLD", "0.52"))
+
+# 병합 카드 안에서 **어느 4초 조각으로 보낼지** 다시 고를지 (자문 1번 결론).
+# 병합은 검색을 좋게 하지만(정답 품은 카드 69%→78%) 이동 지점이 카드 맨 앞으로 밀려
+# 시점 오차가 나빠집니다(2.8초→3.5초). 검색은 합친 카드로, 이동은 원래 조각으로 하면
+# 둘 다 가집니다. 병합을 안 쓰면(MERGE_SIMILARITY=0) 조각 자체가 없어 무해합니다.
+SEEK_LOCALIZE = os.getenv("SEEK_LOCALIZE", "1").strip().lower() not in ("0", "false", "no", "")
+
+# 인접 카드를 합치는 기준 (segmenter.merge_segments 의 포함도).
+# **0 이면 고정 분할 그대로** — 멘토가 "고정 분할을 기준선으로 두고" 라고 했으므로
+# 기본값은 0 입니다. 값을 정하려면 tools/merge_experiment.py 를 보세요.
+MERGE_SIMILARITY = float(os.getenv("MERGE_SIMILARITY", "0"))
+MERGE_MAX_SECONDS = float(os.getenv("MERGE_MAX_SECONDS", "12"))
 # 정확한 단어 채널에 IDF(역문서빈도) 가중치를 쓸지. 끄면 예전의 단순 포함 비율입니다.
 # 9장 실험에서 이 채널의 기여도를 켜고 끄며 재려면 여기를 씁니다.
 LEXICAL_IDF = _flag("LEXICAL_IDF", "true") == "true"
