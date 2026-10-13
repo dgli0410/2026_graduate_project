@@ -78,6 +78,21 @@ FRAME_DEDUP_THRESHOLD = float(os.getenv("FRAME_DEDUP_THRESHOLD", "0.02"))
 SEGMENT_SECONDS = float(os.getenv("SEGMENT_SECONDS", "4.0"))
 SEEK_LEAD_SECONDS = float(os.getenv("SEEK_LEAD_SECONDS", "1.5"))
 SEARCH_TOP_K = int(os.getenv("SEARCH_TOP_K", "5"))
+
+# 멘토 자문 3번 · 근거가 부족하면 "관련 장면 없음" 이라고 말하기 위한 기준입니다.
+# **정규화 전** 코사인 유사도(1위)가 이 값보다 낮으면 low_confidence 로 표시합니다.
+# 정규화된 점수로는 이 판단을 할 수 없습니다 — minmax 가 후보 중 최고를 항상 1.0 으로
+# 만들어서, 아무것도 안 맞는 질의에서도 1위가 만점이 되기 때문입니다.
+#
+# 평가셋 실측(영상 안 검색, 질문 60개):
+#   정답 있는 질문 48개  1위 원유사도 평균 0.587  (0.432 ~ 0.683)
+#   정답 없는 질문 12개              평균 0.509  (0.385 ~ 0.577)
+#   임계값 0.52 → 올바른 거절 7/12, 잘못된 거절 6/48
+#   임계값 0.54 → 올바른 거절 9/12, 잘못된 거절 8/48
+# 분포가 겹쳐서 완전히 가르지는 못합니다. 운영점은 tools/threshold_sweep.py 로 고릅니다.
+#
+# **0 이면 꺼집니다**(예전 동작). 값을 정하기 전까지 기본값은 0 입니다.
+NO_ANSWER_THRESHOLD = float(os.getenv("NO_ANSWER_THRESHOLD", "0"))
 # 정확한 단어 채널에 IDF(역문서빈도) 가중치를 쓸지. 끄면 예전의 단순 포함 비율입니다.
 # 9장 실험에서 이 채널의 기여도를 켜고 끄며 재려면 여기를 씁니다.
 LEXICAL_IDF = _flag("LEXICAL_IDF", "true") == "true"

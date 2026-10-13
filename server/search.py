@@ -18,6 +18,7 @@ from server.config import (
     ANSWER_MODEL,
     DEDUP_OVERLAP_SECONDS,
     LEXICAL_IDF,
+    NO_ANSWER_THRESHOLD,
     SEEK_LEAD_SECONDS,
 )
 
@@ -202,6 +203,13 @@ def hybrid_search(
             condition=condition,
         )
 
+    # ⚠ 정규화 **전** 원래 코사인 값을 따로 챙겨 둡니다.
+    #   minmax 는 후보 중 최고를 항상 1.0 으로 만들기 때문에, 아무것도 안 맞는 질의에서도
+    #   1위 점수가 만점이 됩니다(실측: "자동차 엔진 오일 교환하는 장면" → 1.00).
+    #   그래서 정규화된 점수로는 "자신 없음" 을 표현할 수 없습니다. 멘토 자문 3번의
+    #   근거가 되는 값이 이 raw 입니다(정답 있음 평균 0.587 / 없음 0.509).
+    raw_text = {h.get("segment_id"): float(h["score"]) for h in text_hits}
+
     text_scores = dict(
         zip(
             [h.get("segment_id") for h in text_hits],
@@ -228,6 +236,7 @@ def hybrid_search(
         hit["score_dense"] = round(dense, 4)
         hit["score_lexical"] = round(lexical, 4)
         hit["score_image"] = round(image, 4)
+        hit["score_raw"] = round(raw_text.get(seg, 0.0), 4)  # 정규화 전 (자문 3)
         hit["score"] = round(w_dense * dense + w_lexical * lexical + w_image * image, 4)
         ranked.append(hit)
 
@@ -400,6 +409,12 @@ def search(
 
     from server.config import DEFAULT_CONDITION
 
+    # 멘토 자문 3번 — 근거가 부족하면 "관련 장면 없음" 이라고 말할 수 있어야 합니다.
+    # 판단 근거는 **정규화 전** 유사도입니다(위 raw_text 주석 참고).
+    # NO_ANSWER_THRESHOLD 가 0 이면 아무 일도 하지 않아 예전과 같습니다.
+    top_raw = max((float(s.get("score_raw", 0.0)) for s in scenes), default=0.0)
+    low_confidence = bool(NO_ANSWER_THRESHOLD > 0 and top_raw < NO_ANSWER_THRESHOLD)
+
     return {
         "query": query,
         "condition": condition or DEFAULT_CONDITION,
@@ -410,4 +425,6 @@ def search(
         "scenes": scenes[:top_k] if intent != "summary" else scenes,
         "videos": group_by_video(ranked, limit=video_limit),
         "top_score": scenes[0]["score"] if scenes else 0.0,
+        "top_raw": round(top_raw, 4),
+        "low_confidence": low_confidence,
     }

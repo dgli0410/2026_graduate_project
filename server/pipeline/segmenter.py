@@ -86,6 +86,99 @@ def resolve_duration(
     return round(max(candidates), 2)
 
 
+# --- 의미 단위 병합 (멘토 자문 1번) ---------------------------------------
+#
+# > 4초 고정 분할은 '재료를 볶는다', '불을 줄인다' 같은 의미 단위와 경계가 어긋나
+# > 하나의 행위가 여러 조각으로 흩어진다. **고정 분할을 기준선으로 두고, 인접
+# > 세그먼트를 의미 단위로 병합하는 후처리를 추가**할 것. (2026-09-18 서면 자문)
+#
+# 실제 데이터를 보니 "흩어진다" 가 더 나쁜 형태로 나타나고 있었습니다.
+# `_spans_in_window` 는 창에 **걸치기만 해도** 그 발화를 통째로 넣습니다. 그래서 10초짜리
+# 발화 하나가 4초 카드 3장에 **글자 그대로 복사**됩니다. 저장된 18개 영상의 인접 쌍 147개
+# 중 말 토큰 자카드가 1.00(= 완전히 같은 글)인 쌍이 실제로 있었습니다.
+#
+# 그래서 병합 기준을 **포함도**로 잡았습니다 — 짧은 쪽 토큰이 긴 쪽에 얼마나 들어 있나.
+# 자카드가 아니라 포함도인 이유: 카드 하나가 다음 카드의 앞부분만 공유하는 경우
+# (발화가 걸친 전형적인 모양)를 자카드는 길이 차이 때문에 낮게 봅니다.
+#
+# ⚠ 고정 분할은 **없애지 않습니다.** 멘토가 "기준선으로 두고" 라고 명시했고,
+#   `MERGE_SIMILARITY=0` 이면 이 후처리는 아무것도 하지 않아 예전과 같습니다.
+
+def _tokens(segment: dict[str, Any]) -> set[str]:
+    text = " ".join(
+        str(segment.get(k, "")) for k in ("asr_text", "ocr_text", "caption")
+    )
+    return set(re.findall(r"[가-힣]{2,}|[A-Za-z]{2,}|\d+[a-zA-Z가-힣]*", text.lower()))
+
+
+def _containment(a: set[str], b: set[str]) -> float:
+    """짧은 쪽이 긴 쪽에 얼마나 들어 있나. 한쪽이 비면 0 (빈 카드는 병합 근거가 못 됩니다)."""
+    if not a or not b:
+        return 0.0
+    return len(a & b) / min(len(a), len(b))
+
+
+def merge_segments(
+    segments: list[dict[str, Any]],
+    video_id: str,
+    frames: list[tuple[float, Path]] | None = None,
+    media_root: Path | None = None,
+    similarity: float = 0.0,
+    max_seconds: float = 0.0,
+) -> list[dict[str, Any]]:
+    """인접 카드가 같은 의미 단위면 하나로 합칩니다. 단계 7 후처리.
+
+    `similarity` 가 0 이면 그대로 돌려줍니다(= 고정 분할 기준선).
+    `max_seconds` 는 한 카드가 무한정 길어지는 것을 막습니다. 말이 끊김 없이 이어지는
+    영상에서는 이 상한이 없으면 영상 하나가 카드 한 장이 됩니다.
+
+    글은 `_join` 으로 합쳐 근접 중복을 한 번 더 걸러냅니다 — 병합의 주 효과가
+    **같은 발화의 복사본을 없애는 것**이라 이게 핵심입니다.
+    """
+    if similarity <= 0 or len(segments) < 2:
+        return segments
+
+    merged: list[dict[str, Any]] = []
+    group: list[dict[str, Any]] = [segments[0]]
+
+    def flush() -> None:
+        if len(group) == 1:
+            merged.append(dict(group[0]))
+            return
+        start = min(float(s["start_time"]) for s in group)
+        end = max(float(s["end_time"]) for s in group)
+        card = {
+            "segment_id": "",  # 아래에서 다시 매깁니다
+            "start_time": round(start, 2),
+            "end_time": round(end, 2),
+            "asr_text": _join(s.get("asr_text", "") for s in group),
+            "ocr_text": _join(s.get("ocr_text", "") for s in group),
+            "caption": _join(s.get("caption", "") for s in group),
+            "frame_path": "",
+        }
+        # 대표 프레임은 합쳐진 구간의 가운데로 다시 고릅니다.
+        if frames:
+            card["frame_path"] = _nearest_frame(frames, (start + end) / 2, media_root)
+        else:
+            card["frame_path"] = group[len(group) // 2].get("frame_path", "")
+        merged.append(card)
+
+    for nxt in segments[1:]:
+        span = float(nxt["end_time"]) - float(group[0]["start_time"])
+        too_long = max_seconds > 0 and span > max_seconds
+        close = _containment(_tokens(group[-1]), _tokens(nxt)) >= similarity
+        if close and not too_long:
+            group.append(nxt)
+        else:
+            flush()
+            group = [nxt]
+    flush()
+
+    for i, card in enumerate(merged):
+        card["segment_id"] = f"{video_id}_seg_{i:03d}"
+    return merged
+
+
 def build_segments(
     video_id: str,
     duration: float,
