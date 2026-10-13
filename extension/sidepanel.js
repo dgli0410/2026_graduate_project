@@ -112,7 +112,7 @@ function setCurrentInfo(info, reason = "") {
 // --- 저장 -----------------------------------------------------------------
 
 // 단계 2 · 추출은 실시간 재생이라 영상 길이만큼 걸립니다.
-// 그동안 이 탭에 머물러야 하므로 안내를 크게 띄웁니다.
+// 저장은 별도 창에서 돌아갑니다. 사용자는 그동안 다른 쇼츠를 봐도 됩니다.
 function showCapture(visible, ratio = 0, message = "") {
   const box = $("capture");
   box.classList.toggle("hidden", !visible);
@@ -147,18 +147,23 @@ async function saveCurrent() {
     }
 
     await loadLibrary();
-    const tab = await activeYoutubeTab();
-    if (!tab) throw new Error("유튜브 탭을 찾지 못했습니다.");
 
-    showCapture(true, 0, "영상을 재생하며 분석 준비 중입니다. 이 탭에 머물러 주세요.");
-    const result = await askContentScript(tab.id, {
-      type: "CAPTURE_START",
-      videoId,
-      settings: accepted.capture,
-      apiBase: API_BASE,
-      userId: await getUserId(),
-    });
+    showCapture(true, 0, "저장 창을 여는 중입니다. 이 창에서는 다른 쇼츠를 보셔도 됩니다.");
+    const capture = await openCaptureWindow(videoId);
+    let result;
+    try {
+      result = await askContentScript(capture.tabId, {
+        type: "CAPTURE_START",
+        videoId,
+        settings: accepted.capture,
+        apiBase: API_BASE,
+        userId: await getUserId(),
+      });
+    } finally {
+      await closeCaptureWindow();
+    }
     showCapture(false);
+    if (result?.diag) console.log("[보관함] 캡처 진단", result.diag);
 
     if (!result?.ok) {
       const reason = result?.reason || "알 수 없는 오류";
@@ -175,6 +180,133 @@ async function saveCurrent() {
   } finally {
     btn.disabled = false;
   }
+}
+
+// --- 저장 창 --------------------------------------------------------------
+//
+// 저장은 **별도 창**에서 돕니다. 같은 탭에서 하면 사용자가 다음 쇼츠로 넘기는 순간
+// 유튜브가 <video> 요소를 갈아치워, 두 영상이 섞여 저장되거나 루프가 안 끝납니다.
+// 창이 다르면 문서가 달라서 서로 건드릴 수 없습니다 — 격리가 공짜로 따라옵니다.
+//
+// 화면이 넓으면 원래 창을 좁혀 저장 창 자리를 비워 둡니다. Chrome 은 창이 **완전히
+// 가려지면** 백그라운드 탭과 똑같이 타이머를 1초로 묶어서, 0.5초 간격 캡처가 절반으로
+// 줄기 때문입니다. 자리를 비워두면 그 일이 안 생깁니다.
+// 좁은 화면에서는 건드리지 않습니다 — 남는 폭이 너무 작아 쓸모가 없어집니다.
+
+const CAPTURE_WIN_WIDTH = 480; // 유튜브가 저화질로 내려주지 않을 만큼은 돼야 합니다
+const TILE_MIN_SCREEN = 1600; // 이보다 좁은 화면에서는 원래 창을 건드리지 않습니다
+
+let captureWindowId = null;
+
+async function openCaptureWindow(videoId) {
+  const W = window.screen.availWidth;
+  const H = window.screen.availHeight;
+  const tile = W >= TILE_MIN_SCREEN;
+
+  if (tile) {
+    const main = await chrome.windows.getCurrent();
+    // 좁히기 **전에** 원래 크기를 background 에 맡깁니다. 사이드패널이 닫혀도
+    // background 가 되돌려 줍니다.
+    await chrome.runtime.sendMessage({
+      type: "REMEMBER_WINDOW",
+      state: {
+        windowId: main.id, state: main.state,
+        left: main.left, top: main.top, width: main.width, height: main.height,
+      },
+    });
+    await chrome.windows.update(main.id, { state: "normal" });
+    await chrome.windows.update(main.id, {
+      left: 0, top: 0, width: W - CAPTURE_WIN_WIDTH, height: H,
+    });
+  }
+
+  const win = await chrome.windows.create({
+    url: `https://www.youtube.com/shorts/${videoId}`,
+    type: "popup",
+    focused: false, // 포커스를 뺏지 않습니다
+    left: tile ? W - CAPTURE_WIN_WIDTH : Math.max(0, W - CAPTURE_WIN_WIDTH - 40),
+    top: 0,
+    width: CAPTURE_WIN_WIDTH,
+    height: H,
+  });
+  captureWindowId = win.id;
+  const tabId = win.tabs[0].id;
+
+  if (tile) {
+    const { pendingWindowRestore } = await chrome.storage.local.get("pendingWindowRestore");
+    if (pendingWindowRestore) {
+      await chrome.storage.local.set({
+        pendingWindowRestore: { ...pendingWindowRestore, captureWindowId: win.id },
+      });
+    }
+  }
+
+  await waitForTab(tabId);
+  await prepareCaptureTab(tabId);
+  return { windowId: win.id, tabId };
+}
+
+function waitForTab(tabId) {
+  return new Promise((resolve) => {
+    const done = (id, info) => {
+      if (id === tabId && info.status === "complete") {
+        chrome.tabs.onUpdated.removeListener(done);
+        setTimeout(resolve, 1200); // 유튜브 플레이어가 붙을 시간
+      }
+    };
+    chrome.tabs.onUpdated.addListener(done);
+    setTimeout(() => {
+      chrome.tabs.onUpdated.removeListener(done);
+      resolve();
+    }, 15000);
+  });
+}
+
+/** 저장 창에만 적용합니다. 사용자가 보는 창은 건드리지 않습니다. */
+async function prepareCaptureTab(tabId) {
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId },
+      world: "MAIN", // 페이지 세계 — 유튜브 플레이어 객체에 닿으려면 필요합니다
+      func: () => {
+        // ① 창이 가려져도 유튜브가 스스로 멈추지 않게 "안 숨었다" 고 알려 줍니다.
+        try {
+          Object.defineProperty(document, "visibilityState", { get: () => "visible" });
+          Object.defineProperty(document, "hidden", { get: () => false });
+          document.addEventListener(
+            "visibilitychange",
+            (e) => e.stopImmediatePropagation(),
+            true
+          );
+        } catch (_) {}
+        // ② 창이 작아도 저화질로 내려주지 않게 화질을 고정합니다.
+        //    자막 OCR 이 원본 해상도에 그대로 걸려 있어서 중요합니다.
+        const fix = () => {
+          const p = document.querySelector("#movie_player");
+          if (p && p.setPlaybackQualityRange) {
+            try {
+              p.setPlaybackQualityRange("hd1080");
+            } catch (_) {}
+          }
+        };
+        fix();
+        setTimeout(fix, 1500);
+      },
+    });
+  } catch (err) {
+    console.warn("[보관함] 저장 창 준비 실패(그대로 진행합니다):", err);
+  }
+}
+
+async function closeCaptureWindow() {
+  const id = captureWindowId;
+  captureWindowId = null;
+  if (id != null) {
+    try {
+      await chrome.windows.remove(id); // background 의 onRemoved 가 창 크기를 되돌립니다
+    } catch (_) {}
+  }
+  await chrome.runtime.sendMessage({ type: "RESTORE_WINDOW" }).catch(() => {});
 }
 
 // --- 재생목록 --------------------------------------------------------------
@@ -1131,7 +1263,7 @@ function bindEvents() {
       const label =
         message.phase === "uploading"
           ? "서버로 전송 중입니다..."
-          : "영상을 재생하며 분석 준비 중입니다. 이 탭에 머물러 주세요.";
+          : "저장 창에서 영상을 재생하며 분석 중입니다. 다른 쇼츠를 보셔도 됩니다.";
       showCapture(message.phase !== "uploaded", message.ratio || 0, label);
     }
     return false;

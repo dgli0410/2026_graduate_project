@@ -134,6 +134,22 @@ function report(videoId, phase, ratio, message) {
     .catch(() => {});
 }
 
+// video 요소 하나당 오디오 그래프 하나. createMediaElementSource 는 재호출이 안 됩니다.
+const audioGraphs = new WeakMap();
+
+function audioGraph(video) {
+  if (audioGraphs.has(video)) return audioGraphs.get(video);
+  const Ctx = window.AudioContext || window.webkitAudioContext;
+  if (!Ctx) return null;
+  const ctx = new Ctx();
+  const source = ctx.createMediaElementSource(video);
+  const dest = ctx.createMediaStreamDestination();
+  source.connect(dest); // 녹음용으로만 — ctx.destination 에는 일부러 연결하지 않습니다
+  const graph = { ctx, source, dest, stream: dest.stream };
+  audioGraphs.set(video, graph);
+  return graph;
+}
+
 function frameDiff(a, b) {
   if (!a || !b || a.length !== b.length) return 1;
   let sum = 0;
@@ -166,14 +182,21 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
     tiny.height = 56;
     const tinyCtx = tiny.getContext("2d", { willReadFrequently: true });
 
-    // --- 소리 (검증된 방식) ---
+    // --- 소리 ---
+    // 저장이 **별도 창**에서 돌기 때문에, 그냥 두면 사용자가 보던 영상 소리와 겹쳐 들립니다.
+    // Web Audio 로 받아서 **스피커(audioContext.destination)에는 연결하지 않습니다.**
+    // 그러면 녹음은 되는데 사람에게는 안 들립니다.
+    //
+    // ⚠ video.muted = true 로 끄는 방법은 쓰지 않습니다. captureStream() 의 오디오
+    //   트랙까지 같이 비는 경우가 있어 녹음이 통째로 사라질 수 있습니다.
+    // ⚠ createMediaElementSource 는 한 요소에 **한 번만** 부를 수 있습니다. 두 번째
+    //   호출은 예외를 던지므로 만들어둔 것을 재사용합니다.
     let recorder = null;
     const audioChunks = [];
     try {
-      const stream = video.captureStream ? video.captureStream() : null;
-      const tracks = stream ? stream.getAudioTracks() : [];
-      if (tracks.length) {
-        recorder = new MediaRecorder(new MediaStream(tracks));
+      const graph = audioGraph(video);
+      if (graph) {
+        recorder = new MediaRecorder(graph.stream);
         recorder.ondataavailable = (e) => e.data && e.data.size && audioChunks.push(e.data);
         recorder.start();
       }
@@ -192,9 +215,59 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
     let previous = null;
     let lastTime = -1;
 
+    // --- 중단 가드 ---
+    // ⚠ 예전에는 끝나는 조건이 "되감김" 과 "duration 도달" 둘뿐이었습니다. 저장 중에
+    //   사용자가 다른 쇼츠로 넘기거나 창이 멈추면 currentTime 이 그 자리에 멈추는데,
+    //   그러면 **두 조건 중 어느 것도 걸리지 않아 루프가 영영 끝나지 않습니다.**
+    //   벽시계 상한과 "안 흐르면 포기" 를 같이 둡니다.
+    const deadline = Date.now() + duration * 1000 * 3 + 30000;
+    let stalled = 0;
+    // 진단: 창이 가려진 동안에도 캡처가 돌았는지, 화질이 떨어지지 않았는지.
+    // 이 두 가지가 별도 창 저장의 성패를 가르는데 코드로는 알 수 없어 실측해 올립니다.
+    const diag = {
+      videoWidth: video.videoWidth,
+      videoHeight: video.videoHeight,
+      minHeight: video.videoHeight || 0,
+      ticks: 0,
+      hiddenTicks: 0,
+      stalledWhileHidden: 0,
+      replays: 0,
+    };
+    let stopReason = "완주";
+
     await new Promise((resolve) => {
       const timer = setInterval(async () => {
         const now = video.currentTime;
+        diag.ticks += 1;
+        if (document.hidden) diag.hiddenTicks += 1;
+        if (video.videoHeight) diag.minHeight = Math.min(diag.minHeight, video.videoHeight);
+
+        // 창이 가려지면 유튜브가 스스로 멈출 수 있습니다. 멈췄으면 다시 틉니다.
+        if (video.paused) {
+          diag.replays += 1;
+          video.play().catch(() => {});
+        }
+
+        if (Date.now() > deadline) {
+          stopReason = "시간 초과";
+          clearInterval(timer);
+          resolve();
+          return;
+        }
+        if (now === lastTime) {
+          stalled += 1;
+          if (document.hidden) diag.stalledWhileHidden += 1;
+          // 영상 길이의 절반만큼 제자리면 더 기다릴 이유가 없습니다.
+          if (stalled * interval > Math.max(10000, duration * 500)) {
+            stopReason = "재생이 멈춤";
+            clearInterval(timer);
+            resolve();
+            return;
+          }
+        } else {
+          stalled = 0;
+        }
+
         // 쇼츠는 끝나면 처음으로 되감깁니다. 되감기면 한 바퀴 끝난 것입니다.
         if (now + 0.05 < lastTime || now >= duration - 0.05) {
           clearInterval(timer);
@@ -229,7 +302,13 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
       });
     }
 
-    if (!frames.length) return { ok: false, reason: "no_frames" };
+    diag.endHeight = video.videoHeight;
+    diag.stopReason = stopReason;
+    diag.frames = frames.length;
+    diag.coverage = duration > 0 ? Math.round((lastTime / duration) * 100) : 0;
+    console.log("[보관함] 캡처 진단", diag);
+
+    if (!frames.length) return { ok: false, reason: "no_frames", diag };
 
     // --- 업로드 ---
     report(videoId, "uploading", 0.97, "");
@@ -253,11 +332,11 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
       try {
         detail = (await response.json()).detail || detail;
       } catch (_) {}
-      return { ok: false, reason: detail };
+      return { ok: false, reason: detail, diag };
     }
     const result = await response.json();
     report(videoId, "uploaded", 1, "");
-    return { ok: true, frames: frames.length, result };
+    return { ok: true, frames: frames.length, result, diag };
   } finally {
     capturing = false;
   }
