@@ -46,6 +46,7 @@ python -m tools.check_models          # 그날 되는 Gemini 모델
 python -m tools.e2e_test              # 서버 띄운 뒤, 전 구간
 python -m tools.run_condition --list  # 조건·영상 목록
 python -m tools.ablation              # 제거법 계획 (서버 끄고, --yes 로 실행)
+python -m tools.cost_report           # 영상당 처리 시간·호출 수 (자문 4)
 ```
 
 ## 코드 스타일
