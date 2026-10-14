@@ -128,10 +128,34 @@ function readVideoInfo() {
 
 let capturing = false;
 
+/** 확장이 새로고침되면 이미 떠 있던 content script 는 고아가 됩니다. */
+function contextAlive() {
+  try {
+    return Boolean(chrome.runtime && chrome.runtime.id);
+  } catch (_) {
+    return false;
+  }
+}
+
+/** 고아 상태에서도 조용히 실패합니다.
+ *
+ * ⚠ `.catch()` 만으로는 안 됩니다. 확장 컨텍스트가 사라지면 sendMessage 는 Promise 를
+ *   돌려주기 전에 **동기적으로** "Extension context invalidated" 를 던집니다. 그래서
+ *   try 로 감싸야 합니다. 예전에는 이것 때문에 확장을 새로고침할 때마다 열려 있던
+ *   유튜브 탭이 800ms 마다 콘솔에 에러를 뿜었습니다.
+ */
+function send(payload) {
+  if (!contextAlive()) return false;
+  try {
+    chrome.runtime.sendMessage(payload).catch(() => {});
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function report(videoId, phase, ratio, message) {
-  chrome.runtime
-    .sendMessage({ type: "CAPTURE_PROGRESS", videoId, phase, ratio, message })
-    .catch(() => {});
+  send({ type: "CAPTURE_PROGRESS", videoId, phase, ratio, message });
 }
 
 // video 요소 하나당 오디오 그래프 하나. createMediaElementSource 는 재호출이 안 됩니다.
@@ -230,13 +254,26 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
       minHeight: video.videoHeight || 0,
       ticks: 0,
       hiddenTicks: 0,
+      maxGapMs: 0,       // 틱 사이 최대 간격 — interval 보다 크게 벌어지면 제한을 받은 것
+      throttledTicks: 0, // 간격이 1.6배 넘게 벌어진 틱 수
       stalledWhileHidden: 0,
       replays: 0,
     };
     let stopReason = "완주";
+    // ⚠ 창이 가려졌는지는 document.hidden 으로 보면 되지만, **정작 중요한 것은 그게
+    //   아니라 "타이머가 느려졌는가" 입니다.** Chrome 은 가려진 창의 setInterval 을
+    //   최소 1초로 묶습니다. 0.5초 간격으로 걸어둔 것이 1초로 늘어나면 프레임이
+    //   절반으로 줄어듭니다. 틱 사이 간격을 직접 재는 것이 가장 정직합니다.
+    let lastTick = Date.now();
 
     await new Promise((resolve) => {
       const timer = setInterval(async () => {
+        const gap = Date.now() - lastTick;
+        lastTick = Date.now();
+        if (diag.ticks > 0) {
+          diag.maxGapMs = Math.max(diag.maxGapMs, gap);
+          if (gap > interval * 1.6) diag.throttledTicks += 1;
+        }
         const now = video.currentTime;
         diag.ticks += 1;
         if (document.hidden) diag.hiddenTicks += 1;
@@ -303,6 +340,7 @@ async function captureAndUpload(videoId, settings, apiBase, userId) {
     }
 
     diag.endHeight = video.videoHeight;
+    diag.interval = interval;
     diag.stopReason = stopReason;
     diag.frames = frames.length;
     diag.coverage = duration > 0 ? Math.round((lastTime / duration) * 100) : 0;
@@ -438,7 +476,15 @@ function sameInfo(a, b) {
   );
 }
 
+let notifyTimer = null;
+
 function notifyIfChanged() {
+  // 고아가 됐으면 스스로 멈춥니다. 안 그러면 탭을 새로고침할 때까지 계속 돕니다.
+  if (!contextAlive()) {
+    if (notifyTimer) clearInterval(notifyTimer);
+    notifyTimer = null;
+    return;
+  }
   if (capturing) return; // 추출 중에는 흔들지 않습니다
   if (document.hidden) return; // 지금 보이지 않는(백그라운드) 탭은 방송하지 않습니다
   const info = readVideoInfo();
@@ -449,10 +495,10 @@ function notifyIfChanged() {
   // 때"만 보내고, 다음 폴링에서 DOM 이 정정되면 스스로 다시 보내 고쳐지게 합니다.
   if (!sameInfo(info, lastSent)) {
     lastSent = info;
-    chrome.runtime.sendMessage({ type: "SHORTS_CHANGED", info }).catch(() => {});
+    send({ type: "SHORTS_CHANGED", info });
   }
 }
 
 document.addEventListener("yt-navigate-finish", notifyIfChanged);
 window.addEventListener("popstate", notifyIfChanged);
-setInterval(notifyIfChanged, 800); // 위 이벤트가 안 뜨는 경우 대비
+notifyTimer = setInterval(notifyIfChanged, 800); // 위 이벤트가 안 뜨는 경우 대비
