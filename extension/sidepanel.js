@@ -194,6 +194,21 @@ async function saveCurrent() {
 // 좁은 화면에서는 건드리지 않습니다 — 남는 폭이 너무 작아 쓸모가 없어집니다.
 
 const CAPTURE_WIN_WIDTH = 480; // 유튜브가 저화질로 내려주지 않을 만큼은 돼야 합니다
+
+// 저장 창이 가려져도 되는가 — **실측으로 답이 나왔습니다. 됩니다.**
+//
+//   틱 27회 중 26회가 가려진 상태(hiddenTicks 26/27)
+//   틱 사이 최대 간격 501ms (목표 500ms) · 느려진 틱 0개
+//   유튜브가 멈춘 횟수 0 · 화질 1280 유지 · 완주 97%
+//
+// Chrome 은 보통 가려진 창의 setInterval 을 1초로 묶는데 그 일이 없었습니다.
+// 소리를 Web Audio 로 받고 있어서 Chrome 이 이 창을 "소리 내는 중" 으로 보기
+// 때문으로 보입니다(확인된 원인은 아닙니다).
+//
+// 즉 **타일링(원래 창 좁히기)이 성능을 위해 필요하지는 않습니다.** 그래도 켜 둡니다 —
+// 저장 창이 눈에 보이는 편이 "지금 뭐가 돌고 있다" 가 분명하고, 사용자가 실수로
+// 저장 창을 닫아버리는 일도 줄기 때문입니다. 끄려면 아래를 false 로 하면 됩니다.
+const TILE_WINDOWS = true;
 const TILE_MIN_SCREEN = 1600; // 이보다 좁은 화면에서는 원래 창을 건드리지 않습니다
 
 let captureWindowId = null;
@@ -201,7 +216,7 @@ let captureWindowId = null;
 async function openCaptureWindow(videoId) {
   const W = window.screen.availWidth;
   const H = window.screen.availHeight;
-  const tile = W >= TILE_MIN_SCREEN;
+  const tile = TILE_WINDOWS && W >= TILE_MIN_SCREEN;
 
   if (tile) {
     const main = await chrome.windows.getCurrent();
