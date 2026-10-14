@@ -18,6 +18,15 @@
 - Python 3.14 (WhisperX 미지원 → faster-whisper 폴백이 코드에 있음). 가상환경 `.venv`
 - Windows 한글 콘솔: 서버 띄우기 전 `$env:PYTHONUTF8 = "1"` (cp949 인코딩 오류 예방)
 - 서버: `python -m uvicorn server.main:app --port 8000` — **`--reload` 금지** (로컬 Qdrant는 프로세스 하나만)
+- `[Errno 10048] ... 8000` 은 **이미 다른 서버가 떠 있다**는 뜻입니다. 범인은 보통
+  창 없이 띄워둔 예전 프로세스라 화면에 안 보입니다:
+  ```
+  Get-NetTCPConnection -LocalPort 8000 -State Listen | Select OwningProcess
+  Get-Process python | Stop-Process -Force        # 한 방에 정리
+  ```
+  ⚠ **Claude 는 서버를 `-WindowStyle Hidden` 으로 띄우지 말 것.** 사용자가 끌 수 없는
+  유령 프로세스가 남아 다음 실행을 막습니다(실제로 두 번 발생). 띄웠으면 그 작업이
+  끝나는 턴에 반드시 끄고, 끄지 않을 거면 사용자에게 알릴 것
 - `.env` 는 저장소에 없음. `.env.example` 복사 후 `GEMINI_API_KEY` 채우기
 - **Gemini 무료 티어는 모델당 하루 20회.** 영상 1개가 쓰는 호출 = 음성 + 격자 캡션.
   `ASR_BACKEND=faster-whisper` + `MAX_GEMINI_CALLS_PER_VIDEO=1` + `GRID_FRAMES=12` 로
