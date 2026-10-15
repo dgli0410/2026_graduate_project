@@ -543,6 +543,10 @@ const SCENES_PER_VIDEO = 5; // 영상 하나를 펼쳤을 때 보여줄 장면 �
 //   진짜 "관련 장면 없음" 은 정규화 전 유사도로 따로 재야 하고, 그것이 멘토 자문
 //   3번입니다(지금 성적 0/12). 이 줄을 그 해결책으로 착각하면 안 됩니다.
 const RELATED_CUTOFF = 0.25;
+// "영상 찾아줘" 는 영상을 고르는 질문이라 더 좁게 보여줍니다.
+// ⚠ 이 값은 사례 하나에서 고른 판단값입니다(0.97 은 통과, 0.31 은 접힘).
+//   평가셋으로 재본 값이 아니므로, 영상이 늘면 다시 봐야 합니다.
+const VIDEO_INTENT_CUTOFF = 0.75;
 
 function sceneCard(scene, showTitle = true) {
   const box = document.createElement("div");
@@ -705,10 +709,18 @@ async function runSearch() {
       results.appendChild(warn);
     }
 
-    // "이런 영상 찾아줘" 는 영상을 고르는 질문이라 1개만 내놓습니다.
+    // "이런 영상 찾아줘" 는 영상을 고르는 질문이라 좁게 보여주고,
     // "간장 넣는 장면 찾아줘" 처럼 지점을 묻는 질문은 걸린 영상을 전부 늘어놓습니다.
     // 이 판별은 서버가 이미 해서 `intent` 로 내려줍니다(search.py · detect_intent).
-    const videos = data.intent === "video" ? data.videos.slice(0, 1) : data.videos;
+    //
+    // ⚠ 예전에는 영상 질문일 때 slice(0, 1) 로 **무조건 1개만** 남겼습니다. 그러면
+    //   점수가 사실상 같은 영상이 있어도 버립니다. 실측: 김치찜 영상 2개를 저장하고
+    //   "김치찜 영상 찾아줘" 를 묻자 서버는 0.9754 / 0.9473 둘 다 돌려줬는데
+    //   화면에는 하나만 나왔습니다. 개수가 아니라 **1위와의 비율**로 잘라야
+    //   비슷한 것은 같이 보이고 동떨어진 것만 접힙니다.
+    const videos = data.videos;
+    const cutoffRatio =
+      data.intent === "video" ? VIDEO_INTENT_CUTOFF : RELATED_CUTOFF;
     if (!videos.length) {
       results.innerHTML = "<p class='empty'>맞는 영상을 찾지 못했습니다.</p>";
       return;
@@ -719,7 +731,7 @@ async function runSearch() {
     const top = videos[0].score || 0;
     let cut = videos.length;
     if (top > 0) {
-      cut = videos.findIndex((v) => v.score < top * RELATED_CUTOFF);
+      cut = videos.findIndex((v) => v.score < top * cutoffRatio);
       if (cut < 0) cut = videos.length;
     }
     // 근거가 약하다고 말해놓고 영상을 열 개 늘어놓으면 말과 화면이 어긋납니다.
