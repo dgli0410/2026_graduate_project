@@ -21,11 +21,12 @@ from __future__ import annotations
 
 import argparse
 import shutil
+import sqlite3
 import subprocess
 import sys
 from pathlib import Path
 
-from server.config import ROOT
+from server.config import DB_PATH, ROOT
 from tools.make_user_study_sheet import LAG, LEAD, LIMIT_SEC, PLAN, TASKS
 
 CHROME_CANDIDATES = [
@@ -69,6 +70,7 @@ small { color: #555; }
 .assign div { flex: 1; border: 1px solid #999; padding: 2mm 3mm; border-radius: 1.5mm; }
 .ftable td { height: 14mm; }
 .goal { font-size: 9.5pt; }
+.vid { font-size: 9pt; }
 .foot { margin-top: 3mm; border: 1px solid #999; padding: 3mm; border-radius: 1.5mm; }
 """
 
@@ -82,6 +84,21 @@ def find_chrome() -> Path | None:
         if found:
             return Path(found)
     return None
+
+
+def video_titles() -> dict[str, str]:
+    try:
+        conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+        out = dict(conn.execute("SELECT video_id, title FROM videos"))
+        conn.close()
+        return out
+    except Exception:  # noqa: BLE001 - DB 가 없어도 양식은 만들 수 있어야 합니다
+        return {}
+
+
+def short(title: str, n: int = 26) -> str:
+    title = (title or "").split("#")[0].strip()
+    return title if len(title) <= n else title[: n - 1] + "…"
 
 
 def by_set() -> dict[int, list]:
@@ -98,10 +115,18 @@ def cond_label(c: str) -> str:
 # --- 1) 진행 안내서 ---------------------------------------------------------
 
 def guide_html() -> str:
+    titles = video_titles()
     rows = "".join(
         f"<tr><td class='c'><b>{tid}</b></td><td class='c'>{st}</td>"
-        f"<td class='c'>{kind}</td><td>{goal}</td></tr>"
-        for st, tid, _vid, kind, goal, _s, _e in TASKS
+        f"<td class='c'>{kind}</td>"
+        f"<td><b>{short(titles.get(vid, vid), 22)}</b></td><td>{goal}</td></tr>"
+        for st, tid, vid, kind, goal, _s, _e in TASKS
+    )
+    prep = "".join(
+        f"<tr><td class='c'><b>{tid}</b></td><td class='c'>세트{st}</td>"
+        f"<td>{short(titles.get(vid, vid), 30)}</td>"
+        f"<td><code>youtube.com/shorts/{vid}</code></td></tr>"
+        for st, tid, vid, _k, _g, _s, _e in TASKS
     )
     plan = "".join(
         f"<tr><td class='c'><b>{pid}</b></td>"
@@ -128,8 +153,9 @@ def guide_html() -> str:
 
 <h2>과제 6개</h2>
 <table>
-<tr><th class="c" style="width:12mm">과제</th><th class="c" style="width:12mm">세트</th>
-<th class="c" style="width:24mm">유형</th><th>참가자에게 읽어줄 목표</th></tr>
+<tr><th class="c" style="width:11mm">과제</th><th class="c" style="width:11mm">세트</th>
+<th class="c" style="width:21mm">유형</th><th style="width:40mm">틀어줄 영상</th>
+<th>참가자에게 읽어줄 목표</th></tr>
 {rows}
 </table>
 <p><small>영상 6개가 전부 다릅니다. 유형 3종이 세트마다 하나씩 들어 있습니다.</small></p>
@@ -177,6 +203,17 @@ def guide_html() -> str:
 <small>진행자가 더 잘 설명해주면 그 참가자만 빨라져 비교가 깨집니다.</small>
 </div>
 
+<h2>영상 준비 — 진행 전에 이것부터</h2>
+<p><small><b>영상은 과제가 정합니다. 조건(A/B)과 무관합니다.</b>
+모든 참가자가 영상 6개를 전부 봅니다 — 어떤 방법으로 찾느냐만 다릅니다.</small></p>
+<table>
+<tr><th class="c" style="width:11mm">과제</th><th class="c" style="width:14mm">세트</th>
+<th style="width:52mm">영상</th><th>주소</th></tr>
+{prep}
+</table>
+<p><small><b>A 조건</b>: 그 영상의 유튜브 쇼츠 페이지를 열어 줍니다.
+<b>B 조건</b>: 보관함에 저장돼 있어야 합니다(이미 저장됨). 사이드패널 검색창을 씁니다.</small></p>
+
 <h2>준비물 점검</h2>
 <table>
 <tr><td class="c" style="width:8mm">□</td><td>서버 켜짐 (<code>uvicorn server.main:app --port 8000</code>)</td></tr>
@@ -198,7 +235,8 @@ def guide_html() -> str:
 
 # --- 2) 평가지 --------------------------------------------------------------
 
-def form_page(pid: str, s1: int, c1: str, s2: int, c2: str, sets: dict[int, list]) -> str:
+def form_page(pid: str, s1: int, c1: str, s2: int, c2: str,
+              sets: dict[int, list], titles: dict[str, str]) -> str:
     rows = []
     order = 1
     for st, cond in ((s1, c1), (s2, c2)):
@@ -208,6 +246,7 @@ def form_page(pid: str, s1: int, c1: str, s2: int, c2: str, sets: dict[int, list
                 f"<td class='c'><b>{order}</b><br><small>{tid}</small></td>"
                 f"<td class='c'><b>{'A' if cond == 'A' else 'B'}</b><br>"
                 f"<small>{'직접' if cond == 'A' else '시스템'}</small></td>"
+                f"<td class='vid'><b>{short(titles.get(_vid, _vid))}</b></td>"
                 f"<td class='goal'>{goal}<br><small>({kind})</small></td>"
                 f"<td></td><td></td><td></td><td></td><td></td>"
                 f"</tr>"
@@ -230,8 +269,9 @@ def form_page(pid: str, s1: int, c1: str, s2: int, c2: str, sets: dict[int, list
 <tr>
   <th class="c" style="width:11mm">순서</th>
   <th class="c" style="width:12mm">조건</th>
-  <th style="width:52mm">읽어줄 목표</th>
-  <th style="width:33mm">첫 질의문<br><small>(B조건만)</small></th>
+  <th style="width:34mm">틀어줄 영상</th>
+  <th style="width:44mm">읽어줄 목표</th>
+  <th style="width:28mm">첫 질의문<br><small>(B조건만)</small></th>
   <th class="c" style="width:17mm">도달<br>시점(초)</th>
   <th class="c" style="width:17mm">소요<br>시간(초)</th>
   <th class="c" style="width:12mm">시도<br>횟수</th>
@@ -251,7 +291,9 @@ def form_page(pid: str, s1: int, c1: str, s2: int, c2: str, sets: dict[int, list
 
 def forms_html() -> str:
     sets = by_set()
-    pages = "".join(form_page(pid, s1, c1, s2, c2, sets) for pid, s1, c1, s2, c2 in PLAN)
+    titles = video_titles()
+    pages = "".join(form_page(pid, s1, c1, s2, c2, sets, titles)
+                    for pid, s1, c1, s2, c2 in PLAN)
     return f"""<!doctype html><meta charset="utf-8"><style>{CSS}</style><body>{pages}</body>"""
 
 
