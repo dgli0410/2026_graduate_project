@@ -59,6 +59,7 @@ python -m tools.cost_report           # 영상당 처리 시간·호출 수 (자
 python -m tools.merge_experiment      # 의미 단위 병합 전후 (자문 1, 서버 끄고)
 python -m tools.threshold_sweep       # 거절 임계값 곡선 (자문 3, 서버 켜고)
 python -m tools.backfill_captions     # 설명이 빈 영상 채우기 (서버 끄고)
+python -m tools.make_user_study_sheet # 사용자 평가 기록 양식 (--force 로 덮어쓰기)
 ```
 
 ## 코드 스타일
@@ -80,7 +81,8 @@ python -m tools.backfill_captions     # 설명이 빈 영상 채우기 (서버 �
   재료·분량에서 해롭다는 것은 통계적으로 확실(+0.084). 끄기 전에 시각적 상태 질문을
   늘려 다시 재야 합니다 — 지금 13개뿐이라 그쪽 손해가 확정되지 않았습니다
 - 자문 3 적용 중: `NO_ANSWER_THRESHOLD=0.52`. 자문 1 결과: `MERGE_SIMILARITY=0`(꺼짐)
-- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 **사용자 평가 10명** (리드타임이 김)
+- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 **사용자 평가 10명**.
+  설계·과제·기록 양식은 완료(`docs/user-study.md`) — **남은 것은 참가자 섭외뿐**
 - ⚠ `tools.make_labeling_sheet --force` 는 지금 시트를 덮어씁니다 (라벨 113줄이 들어 있음)
 - ⚠ 한글 질의로 API 를 시험할 때 PowerShell `Invoke-RestMethod` 는 UTF-8 로 안 보냅니다.
   Python `urllib` 로 하세요 (PowerShell 로 재면 유사도가 엉뚱하게 낮게 나옵니다)
