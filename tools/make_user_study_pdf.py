@@ -215,8 +215,14 @@ def guide_html() -> str:
 <b>B 조건</b>: 보관함에 저장돼 있어야 합니다(이미 저장됨). 사이드패널 검색창을 씁니다.</small></p>
 
 <h2>준비물 점검</h2>
+<div class="no" style="margin-bottom:2mm">
+<b>⚠ AI 답변 생성을 꺼 두세요.</b> 검색 한 번마다 Gemini 를 1회 쓰는데 무료 티어가
+<b>하루 20회</b>입니다. 10명이면 30~90회라 <b>7번째 참가자쯤부터 답변이 안 나옵니다.</b>
+앞뒤 참가자가 다른 화면을 보면 비교가 깨집니다. 켜고 할 거면 <b>하루 6명씩</b> 나누세요.
+</div>
 <table>
-<tr><td class="c" style="width:8mm">□</td><td>서버 켜짐 (<code>uvicorn server.main:app --port 8000</code>)</td></tr>
+<tr><td class="c" style="width:8mm">□</td><td><b>AI 답변 생성 꺼짐</b> (또는 오늘 6명 이하로 진행)</td></tr>
+<tr><td class="c">□</td><td>서버 켜짐 (<code>uvicorn server.main:app --port 8000</code>)</td></tr>
 <tr><td class="c">□</td><td>과제 영상 6개가 보관함에 저장돼 있음</td></tr>
 <tr><td class="c">□</td><td>검색 한 번 해봐서 잘 도는지 확인</td></tr>
 <tr><td class="c">□</td><td>스톱워치 / 평가지 / 펜</td></tr>
