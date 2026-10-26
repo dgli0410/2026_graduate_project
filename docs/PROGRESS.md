@@ -724,7 +724,9 @@ OCR + 장면 설명)입니다. 서비스화할 때 먼저 손봐야 할 곳이 �
 ## 5-6. "관련 장면 없음" — 구현하고 운영점을 데이터로 골랐습니다 (자문 3번)
 
 `server/search.py` · `config.NO_ANSWER_THRESHOLD` · 실험 `tools/threshold_sweep.py` ·
-원자료 `eval/threshold.json`
+원자료 `eval/threshold_20261026.json`
+
+> 로직이 어떻게 도는지는 **[`abstention.md`](abstention.md)** 에 따로 정리돼 있습니다(박현준).
 
 > 멘토: 근거가 부족하면 **"관련 장면 없음"** 이라고 답할 것.
 
@@ -939,25 +941,28 @@ OCR + 장면 설명)입니다. 서비스화할 때 먼저 손봐야 할 곳이 �
 | 지금 보는 것 | 용도 |
 | --- | --- |
 | **`docs/PROGRESS.md`** | **이 문서.** 자문 이후 진행 상황 전체 |
+| `docs/plan-and-roles.md` · `.pdf` | 추진 일정표 · 역할 분담표 (제출용) |
 | `README.md` | 설치·실행법, 코드 구조 |
-| `docs/eval-guide.md` | 질문·라벨링 작업 지침 (평가셋을 늘릴 때) |
-| `eval/video_list.md` | 저장된 영상 18개 목록 |
+| `docs/eval-guide.md` | 질문·라벨링 작업 지침 |
 | `CLAUDE.md` | Claude Code 작업 지침 |
 
 | 세부 기록 (필요할 때만) | |
 | --- | --- |
-| `docs/fixes-20261005.md` | 박현준 10/05 수정 상세 |
-| `docs/fixes-20261010.md` | 이동현 10/09~10 수정 상세 |
-| `SigLIP2_실험기록_20260914.md` | SigLIP2 실험 전문 (794줄) |
+| `docs/abstention.md` | "관련 장면 없음" 구현 상세 (5-6장 보충) |
+| `docs/user-study.md` · `user-study-guide.pdf` | 사용자 평가 설계 근거 · 진행 안내서 (5-7장 보충) |
+| `docs/fixes-20261005.md` | 박현준 10/05 수정 상세 (3장 보충) |
+| `docs/fixes-20261010.md` | 이동현 10/09~10 수정 상세 (3장 보충) |
+| `SigLIP2_실험기록_20260914.md` | SigLIP2 실험 전문 (4장 보충) |
 | `docs/mentor-feedback.md` | 9/18 자문 원문 |
-| `eval/ablation.json` | 제거법 15조건 원자료 (문항별 점수) |
-| `eval/merge_experiment.json` | 의미 단위 병합 실험 원자료 |
-| `eval/threshold.json` | 거절 임계값 곡선 원자료 |
-| `eval/user_study_raw.csv` | 사용자 평가 원자료 (60과제 · 질의문 30개) |
-| `docs/plan-and-roles.md` · `.pdf` | 추진 일정표 · 역할 분담표 (제출용) |
+| `eval/video_list.md` | 저장된 영상 18개 |
 
-| ⚠ 낡음 — 그대로 인용하지 마세요 | 이유 |
+| 측정 원자료 | |
 | --- | --- |
-| `docs/search-logic.md` | 9/22 기준. "IDF 없음", "그림 좌표 항상 0" 이 지금은 사실이 아닙니다 |
-| `docs/MENTOR_BRIEF.md` | 9/22 기준. ASR 기본값·격자 수·캡션 모델이 옛날 값입니다 |
-| `docs/team-meeting.md` | 9/29 기준. 회의 결정 사항이 이후 바뀌었습니다 |
+| `eval/result_20261021.json` | 공식 기준선 (5장) |
+| `eval/ablation.json` | 제거법 15조건 (5-2장) |
+| `eval/merge_experiment.json` | 의미 단위 병합 (5-5장) |
+| `eval/threshold_20261026.json` | 거절 임계값 곡선 (5-6장) |
+| `eval/user_study_raw.csv` | 사용자 평가 60과제 (5-7장) |
+
+> **낡은 문서는 `docs/archive/` 로 옮겼습니다.** 지우지 않은 이유와 그중 아직 쓸 만한
+> 부분은 그 폴더의 README 에 적어 두었습니다.

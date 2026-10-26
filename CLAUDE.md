@@ -9,10 +9,11 @@
 - `README.md` — 실행법, 코드 구조, 담당 경계
 - `docs/eval-guide.md` — 질문셋·평가셋 만드는 법. 평가 작업을 도울 때 기준이 되는 문서
 - `server/config.py` — 모든 설정과 조건(condition) 정의가 여기 한 곳
-- 세부 기록은 `docs/fixes-20261005.md`(현준) · `docs/fixes-20261010.md`(동현) ·
-  `SigLIP2_실험기록_20260914.md` · `docs/mentor-feedback.md`(자문 원문)
-- ⚠ `docs/MENTOR_BRIEF.md` · `docs/search-logic.md`(9/22) 와 `docs/team-meeting.md`(9/29) 는
-  **낡았습니다.** 설계 의도와 코드 위치는 유효하지만 설정값·측정치·"미해결" 목록은 믿지 마세요
+- 세부 기록은 `docs/abstention.md`(자문 3 상세) · `docs/fixes-20261005.md`(현준) ·
+  `docs/fixes-20261010.md`(동현) · `SigLIP2_실험기록_20260914.md` · `docs/mentor-feedback.md`
+- 제출용: `docs/plan-and-roles.pdf` (추진 일정표·역할 분담표)
+- ⚠ 낡은 문서와 역할이 끝난 일회성 자료는 `docs/archive/` 로 옮겼습니다.
+  **지금 상황을 알려면 쓰지 마세요.** 이유는 그 폴더 README 에 있습니다
 
 ## 환경
 - Python 3.14 (WhisperX 미지원 → faster-whisper 폴백이 코드에 있음). 가상환경 `.venv`

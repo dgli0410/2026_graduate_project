@@ -85,35 +85,34 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 
 ## 0-2. 문서
 
-**문서가 많아 보이지만 평소에 볼 것은 위 4개뿐입니다.** 나머지는 기록 보존용입니다.
+**평소에 볼 것은 위 네 개뿐입니다.**
 
 | 지금 보는 것 | 내용 |
 | --- | --- |
-| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **★ 통합본.** 9/18 자문 이후 진행 상황 전체 — 무엇을 고쳤고, 지금 성적이 얼마고, 다음에 뭘 하는지. **멘토 보고·팀 공유는 이것 하나로** |
-| [`docs/eval-guide.md`](docs/eval-guide.md) | 질문셋·평가셋 만드는 법 (질문 작성자·라벨러용 작업 지침) |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **★ 통합본.** 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지. **멘토 보고·팀 공유는 이것 하나로** |
 | [`docs/plan-and-roles.pdf`](docs/plan-and-roles.pdf) | **추진 일정표 · 역할 분담표** (제출용 2쪽) |
-| [`docs/user-study-guide.pdf`](docs/user-study-guide.pdf) | 사용자 평가 진행 안내서 (인쇄용 2쪽) |
-| [`docs/user-study-forms.pdf`](docs/user-study-forms.pdf) | **평가지** (인쇄용, 참가자 1인당 1장 × 10) |
-| [`docs/user-study.md`](docs/user-study.md) | 사용자 평가 **설계 근거** — 왜 이렇게 설계했는지 |
-| [`eval/video_list.md`](eval/video_list.md) | 저장된 영상 목록 |
+| [`docs/eval-guide.md`](docs/eval-guide.md) | 질문·라벨링 작업 지침 (평가셋을 늘릴 때) |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
 
 | 세부 기록 (필요할 때만) | 내용 |
 | --- | --- |
-| [`docs/fixes-20261005.md`](docs/fixes-20261005.md) | 박현준 10/05 수정 상세 |
-| [`docs/fixes-20261010.md`](docs/fixes-20261010.md) | 이동현 10/09~10 수정 상세 |
-| [`eval/ablation.json`](eval/ablation.json) | 제거법 15조건 원자료 (문항별 점수) |
-| [`eval/merge_experiment.json`](eval/merge_experiment.json) | 의미 단위 병합 실험 원자료 |
-| [`eval/threshold.json`](eval/threshold.json) | 거절 임계값 곡선 원자료 |
+| [`docs/abstention.md`](docs/abstention.md) | "관련 장면 없음" 구현 상세 (자문 3번) |
+| [`docs/user-study.md`](docs/user-study.md) · [`-guide.pdf`](docs/user-study-guide.pdf) | 사용자 평가 설계 근거 · 진행 안내서 |
+| [`docs/fixes-20261005.md`](docs/fixes-20261005.md) · [`20261010`](docs/fixes-20261010.md) | 조용히 틀리던 버그 수정 기록 |
 | [`SigLIP2_실험기록_20260914.md`](SigLIP2_실험기록_20260914.md) | SigLIP2 파인튜닝 실험 전문 |
-| [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 자문 원문과 그때 세운 계획 |
-| [`docs/meeting-brief-20261010.md`](docs/meeting-brief-20261010.md) | 10/10 회의 브리핑 (붙여넣기용) |
+| [`docs/mentor-feedback.md`](docs/mentor-feedback.md) | 9/18 자문 원문 |
+| [`eval/video_list.md`](eval/video_list.md) | 저장된 영상 18개 목록 |
 
-| ⚠ 낡음 — 그대로 인용하지 말 것 | 이유 |
+| 측정 원자료 | |
 | --- | --- |
-| [`docs/search-logic.md`](docs/search-logic.md) | 9/22 기준. 여기 적힌 문제 대부분이 이후 고쳐졌습니다 |
-| [`docs/MENTOR_BRIEF.md`](docs/MENTOR_BRIEF.md) | 9/22 기준. 백엔드 설정·측정치가 옛날 값입니다 |
-| [`docs/team-meeting.md`](docs/team-meeting.md) | 9/29 기준. 결정 사항이 이후 바뀌었습니다 |
+| `eval/result_20261021.json` | 공식 기준선 |
+| `eval/ablation.json` | 제거법 15조건 |
+| `eval/merge_experiment.json` | 의미 단위 병합 |
+| `eval/threshold_20261026.json` | 거절 임계값 곡선 |
+| `eval/user_study_raw.csv` | 사용자 평가 60과제 |
+
+> 낡은 문서와 역할이 끝난 일회성 자료는 [`docs/archive/`](docs/archive/) 에 있습니다.
+> **지금 상황을 알려면 쓰지 마세요** — 이유는 그 폴더의 README 에 적어 뒀습니다.
 
 ## 0-3. 이용 범위 (저작권)
 

@@ -1,7 +1,7 @@
 # 질문셋 · 평가셋 만드는 법
 
 > **문서 지도**
-> - [`MENTOR_BRIEF.md`](MENTOR_BRIEF.md) — 프로젝트 총정리
+> - [`MENTOR_BRIEF.md`](archive/MENTOR_BRIEF.md) — 프로젝트 총정리
 > - [`mentor-feedback.md`](mentor-feedback.md) — 9/18 자문 결과와 실행 계획
 > - **이 문서** — 질문과 정답 라벨을 **실제로 어떻게 만드는가** (작업 지침)
 > - [`../eval/labeling_sheet.xlsx`](../eval/labeling_sheet.xlsx) — 입력할 시트
