@@ -61,6 +61,7 @@ python -m tools.threshold_sweep       # 거절 임계값 곡선 (자문 3, 서�
 python -m tools.backfill_captions     # 설명이 빈 영상 채우기 (서버 끄고)
 python -m tools.make_user_study_sheet # 사용자 평가 집계 엑셀 (--force 로 덮어쓰기)
 python -m tools.make_user_study_pdf   # 사용자 평가 인쇄물 (안내서 + 평가지 10장)
+python -m tools.make_plan_pdf         # 추진 일정표·역할 분담표 PDF
 ```
 
 ## 코드 스타일

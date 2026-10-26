@@ -91,7 +91,8 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 | --- | --- |
 | [`docs/PROGRESS.md`](docs/PROGRESS.md) | **★ 통합본.** 9/18 자문 이후 진행 상황 전체 — 무엇을 고쳤고, 지금 성적이 얼마고, 다음에 뭘 하는지. **멘토 보고·팀 공유는 이것 하나로** |
 | [`docs/eval-guide.md`](docs/eval-guide.md) | 질문셋·평가셋 만드는 법 (질문 작성자·라벨러용 작업 지침) |
-| [`docs/user-study-guide.pdf`](docs/user-study-guide.pdf) | **사용자 평가 진행 안내서** (인쇄용 2쪽) |
+| [`docs/plan-and-roles.pdf`](docs/plan-and-roles.pdf) | **추진 일정표 · 역할 분담표** (제출용 2쪽) |
+| [`docs/user-study-guide.pdf`](docs/user-study-guide.pdf) | 사용자 평가 진행 안내서 (인쇄용 2쪽) |
 | [`docs/user-study-forms.pdf`](docs/user-study-forms.pdf) | **평가지** (인쇄용, 참가자 1인당 1장 × 10) |
 | [`docs/user-study.md`](docs/user-study.md) | 사용자 평가 **설계 근거** — 왜 이렇게 설계했는지 |
 | [`eval/video_list.md`](eval/video_list.md) | 저장된 영상 목록 |
