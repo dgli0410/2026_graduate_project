@@ -82,8 +82,10 @@ python -m tools.make_user_study_pdf   # 사용자 평가 인쇄물 (안내서 + 
   재료·분량에서 해롭다는 것은 통계적으로 확실(+0.084). 끄기 전에 시각적 상태 질문을
   늘려 다시 재야 합니다 — 지금 13개뿐이라 그쪽 손해가 확정되지 않았습니다
 - 자문 3 적용 중: `NO_ANSWER_THRESHOLD=0.52`. 자문 1 결과: `MERGE_SIMILARITY=0`(꺼짐)
-- **다음 할 일은 `docs/PROGRESS.md` 7장.** 1순위는 **사용자 평가 10명**.
-  설계·과제·인쇄물 완료(`docs/user-study-guide.pdf`, `-forms.pdf`) — **남은 것은 참가자 섭외뿐**
+- **사용자 평가 완료(10/26, 5-7장).** 10명 60과제. 장면 찾기 **27.3초 → 9.3초(66% 단축)**,
+  10명 전원 개선, 부호검정 p=0.002. 성공률은 양쪽 다 천장이라 변별력 없음
+- **멘토 자문 1차·2차 요구가 전부 처리됐습니다.** 남은 것은 추진 일정표·역할 분담표
+  (중간평가 채점 항목)와 질문 보강 — `docs/PROGRESS.md` 7장
 - ⚠ `tools.make_labeling_sheet --force` 는 지금 시트를 덮어씁니다 (라벨 113줄이 들어 있음)
 - ⚠ 한글 질의로 API 를 시험할 때 PowerShell `Invoke-RestMethod` 는 UTF-8 로 안 보냅니다.
   Python `urllib` 로 하세요 (PowerShell 로 재면 유사도가 엉뚱하게 낮게 나옵니다)
