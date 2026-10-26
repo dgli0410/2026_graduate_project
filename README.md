@@ -89,7 +89,8 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 
 | 지금 보는 것 | 내용 |
 | --- | --- |
-| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **★ 통합본.** 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지. **멘토 보고·팀 공유는 이것 하나로** |
+| [`docs/summary.pdf`](docs/summary.pdf) | **★ 제출용 요약** 4쪽 — 결론·성과·자문 대응·한계. **멘토·심사에는 이것** |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **통합본(963줄).** 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지. **멘토 보고·팀 공유는 이것 하나로** |
 | [`docs/plan-and-roles.pdf`](docs/plan-and-roles.pdf) | **추진 일정표 · 역할 분담표** (제출용 2쪽) |
 | [`docs/eval-guide.md`](docs/eval-guide.md) | 질문·라벨링 작업 지침 (평가셋을 늘릴 때) |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
