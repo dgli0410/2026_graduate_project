@@ -90,7 +90,8 @@ API 서버 (FastAPI) → 작업 큐 → Worker
 | 지금 보는 것 | 내용 |
 | --- | --- |
 | [`docs/summary.pdf`](docs/summary.pdf) | **★ 제출용 요약** 4쪽 — 결론·성과·자문 대응·한계. **멘토·심사에는 이것** |
-| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **통합본(963줄).** 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지. **멘토 보고·팀 공유는 이것 하나로** |
+| [`docs/progress-full.pdf`](docs/progress-full.pdf) | 통합본 **PDF** — 근거까지 다 필요할 때 |
+| [`docs/PROGRESS.md`](docs/PROGRESS.md) | **통합본(977줄).** 자문 이후 무엇을 고쳤고 지금 성적이 얼마인지. **멘토 보고·팀 공유는 이것 하나로** |
 | [`docs/plan-and-roles.pdf`](docs/plan-and-roles.pdf) | **추진 일정표 · 역할 분담표** (제출용 2쪽) |
 | [`docs/eval-guide.md`](docs/eval-guide.md) | 질문·라벨링 작업 지침 (평가셋을 늘릴 때) |
 | [`CLAUDE.md`](CLAUDE.md) | Claude Code 작업 지침 |
@@ -411,7 +412,7 @@ python -m tools.eval_search --all       # 현행 vs 기준선 (서버 켜고)
 
 - **추출은 실시간 재생입니다.** 60초 영상이면 추출도 60초가 걸립니다. 다만 **별도 창에서
   돌기 때문에 그 화면에 머무를 필요는 없습니다** — 다른 쇼츠를 보셔도 됩니다.
-  (실측: 영상 길이 평균 47초 + 서버 처리 110초 = 대기 157초. `tools/cost_report.py`)
+  (실측: 영상 길이 평균 47초 + 서버 처리 112초 = 대기 159초. `tools/cost_report.py`)
 - **저장은 한 번에 하나씩입니다.** 서버는 두 개까지 동시에 분석하도록 돼 있지만
   (`worker.CONCURRENCY = 2`) 확장이 저장 버튼을 잠가 한 번에 하나만 보냅니다.
 - 서버에 `ffmpeg` 가 필요 없습니다. 확장이 오디오를 16kHz wav 로 만들어 보냅니다.

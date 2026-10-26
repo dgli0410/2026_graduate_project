@@ -12,6 +12,7 @@
 - 세부 기록은 `docs/abstention.md`(자문 3 상세) · `docs/fixes-20261005.md`(현준) ·
   `docs/fixes-20261010.md`(동현) · `SigLIP2_실험기록_20260914.md` · `docs/mentor-feedback.md`
 - 제출용: `docs/summary.pdf`(4쪽 요약) · `docs/plan-and-roles.pdf`(일정표·역할분담표)
+  · `docs/progress-full.pdf`(통합본 전체)
   ⚠ 수치를 고치면 `PROGRESS.md` 와 `tools/make_summary_pdf.py` 를 **같이** 고칠 것
 - ⚠ 낡은 문서와 역할이 끝난 일회성 자료는 `docs/archive/` 로 옮겼습니다.
   **지금 상황을 알려면 쓰지 마세요.** 이유는 그 폴더 README 에 있습니다
@@ -65,6 +66,7 @@ python -m tools.make_user_study_sheet # 사용자 평가 집계 엑셀 (--force 
 python -m tools.make_user_study_pdf   # 사용자 평가 인쇄물 (안내서 + 평가지 10장)
 python -m tools.make_plan_pdf         # 추진 일정표·역할 분담표 PDF
 python -m tools.make_summary_pdf      # 제출용 요약 PDF 4쪽
+python -m tools.md_to_pdf docs/PROGRESS.md --out docs/progress-full.pdf   # md → PDF
 ```
 
 ## 코드 스타일
