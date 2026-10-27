@@ -104,6 +104,22 @@ flowchart TB
 
 현재 데모는 SQLite, 서버 내부 작업 큐, Qdrant 로컬 파일 모드를 사용합니다. 사용자별 데이터는 `user_id`로 구분하며, 사용자 식별은 확장 프로그램이 생성한 UUID와 `X-User-Id` 헤더를 사용하는 데모 방식입니다.
 
+### 4.1. 기술 스택
+
+| 구분 | 기술 | 용도 |
+| --- | --- | --- |
+| 프론트엔드 | JavaScript · HTML · CSS | Side Panel 보관함·검색 UI |
+| 브라우저 확장 | Chrome Extension Manifest V3 · Chrome APIs | 영상 정보 수집, 캡처 제어, 원본 시점 이동 |
+| 백엔드 | Python · FastAPI · Uvicorn | 업로드·보관함·검색 API 제공 |
+| 비동기 처리 | asyncio | 서버 내부 작업 큐와 분석 Worker 실행 |
+| 음성 인식 | faster-whisper | 음성 전사 및 발화 시각 추출 |
+| 화면 문자 인식 | EasyOCR | 프레임 내 자막·재료·분량 추출 |
+| 텍스트 임베딩 | BGE-M3 · FlagEmbedding | 장면 텍스트와 질문의 의미 유사도 검색 |
+| 이미지 임베딩 | SigLIP2 · PyTorch · Hugging Face Transformers | 질문과 대표 프레임의 이미지 유사도 검색 |
+| 생성형 AI | Gemini API · Google Gen AI SDK | 장면 설명, 근거 기반 답변, 이미지 검색용 질의 번역 |
+| 벡터 저장소 | Qdrant | 텍스트·이미지 벡터 저장 및 검색 |
+| 메타데이터 저장소 | SQLite | 영상·장면·재생목록·분석 상태 관리 |
+
 ## 5. 검색 흐름
 
 **“감자를 언제 넣어?”**라는 질문을 예로 들면 다음과 같이 동작합니다. 아래 시각과 문구는 흐름을 설명하기 위한 예시입니다.
