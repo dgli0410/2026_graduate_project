@@ -329,6 +329,21 @@ API 문서는 `http://localhost:8000/docs`에서 확인할 수 있습니다. 기
 
 실험의 상세 조건과 제약은 [진행 상황 통합 문서](docs/PROGRESS.md), 평가셋 작성 방식은 [평가 가이드](docs/eval-guide.md)를 참고합니다.
 
+**제출·인쇄용 문서**
+
+| 파일 | 내용 |
+| --- | --- |
+| [`docs/summary.pdf`](docs/summary.pdf) | **진행 상황 요약 4쪽** — 성과·자문 대응·사용자 평가·한계. 멘토·심사 제출용 |
+| [`docs/plan-and-roles.pdf`](docs/plan-and-roles.pdf) | **추진 일정표 · 역할 분담표** 2쪽 (지난 일정은 git 이력 기준) |
+| [`docs/progress-full.pdf`](docs/progress-full.pdf) | 통합 문서 전체를 PDF 로 (근거까지 필요할 때) |
+| [`docs/user-study-guide.pdf`](docs/user-study-guide.pdf) | 사용자 평가 진행 안내서 (재진행 시) |
+
+`tools/make_summary_pdf.py` · `make_plan_pdf.py` · `md_to_pdf.py` 로 다시 만들 수 있습니다.
+수치를 고칠 때는 `docs/PROGRESS.md` 와 해당 도구를 **함께** 고쳐야 합니다.
+
+낡았거나 역할이 끝난 문서는 [`docs/archive/`](docs/archive/) 에 있습니다 — 지우지 않은
+이유와 그중 아직 쓸 만한 부분은 그 폴더의 README 에 적어 두었습니다.
+
 </details>
 
 본 프로젝트는 개인 학습·연구 목적의 졸업작품입니다. 검색 결과의 영상 재생은 YouTube에서 이루어지며, 시스템에는 검색을 위한 캡처 프레임·오디오·분석 결과가 저장됩니다.
