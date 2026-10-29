@@ -68,8 +68,9 @@ BODY = """
 <tr><th style="width:44mm">항목</th><th>결과</th></tr>
 <tr class="hl"><td><b>사용자 과제 소요 시간</b></td>
 <td><b>27.3초 → 9.3초 (66% 단축)</b> · 참가자 10/10명 개선 · p=0.002</td></tr>
-<tr><td>검색 성능 (nDCG@5)</td>
-<td><b>0.745</b> (음성 단일 신호 기준선 0.719, <b>+0.027</b>)</td></tr>
+<tr><td>검색 성능</td>
+<td><b>nDCG@5 0.745</b> · Recall@5 0.802 · mAP 0.621 · 1위적중 0.688<br>
+<small>음성 단일 신호 기준선 대비 nDCG <b>+0.027</b> · 1위적중 <b>+0.063</b></small></td></tr>
 <tr><td>과제 성공률</td>
 <td>직접 탐색 93% / 제안 시스템 83% — <b>양쪽 모두 천장에 근접해 변별력 없음</b></td></tr>
 <tr><td>처리 비용</td>
@@ -129,13 +130,18 @@ BODY = """
 <h3>자문 2 · 신호별 역할 규명 <small>(핵심 기여)</small></h3>
 <p>신호 4개(음성·자막·설명·그림)의 조합 <b>2⁴−1 = 15가지를 전수</b>로 측정했습니다.</p>
 <table>
-<tr><th class="c" style="width:38mm">조건</th><th class="r" style="width:20mm">nDCG@5</th><th class="r" style="width:20mm">기준대비</th><th>답하는 질문</th></tr>
-<tr><td class="c">전부</td><td class="r">0.745</td><td class="r">—</td><td>기준</td></tr>
-<tr class="hl"><td class="c"><b>설명 제외</b></td><td class="r"><b>0.772</b></td><td class="r"><b>+0.026</b></td><td><b>Gemini 없이 로컬만으로 되나</b></td></tr>
-<tr><td class="c">자막 제외</td><td class="r">0.765</td><td class="r">+0.020</td><td>EasyOCR 이 필요한가</td></tr>
-<tr><td class="c">음성 제외</td><td class="r">0.697</td><td class="r">−0.049</td><td><b>음성이 가장 중요</b></td></tr>
-<tr><td class="c">그림만</td><td class="r">0.470</td><td class="r">−0.275</td><td>무작위(0.480)와 구별 안 됨</td></tr>
+<tr><th class="c" style="width:30mm">조건</th><th class="r" style="width:17mm">nDCG@5</th>
+<th class="r" style="width:17mm">Recall@5</th><th class="r" style="width:13mm">mAP</th>
+<th class="r" style="width:16mm">1위적중</th><th>답하는 질문</th></tr>
+<tr><td class="c">전부 (현행)</td><td class="r">0.745</td><td class="r">0.802</td><td class="r">0.621</td><td class="r">0.688</td><td>기준</td></tr>
+<tr class="hl"><td class="c"><b>설명 제외</b></td><td class="r"><b>0.772</b></td><td class="r"><b>0.833</b></td><td class="r"><b>0.660</b></td><td class="r"><b>0.750</b></td><td><b>Gemini 없이 로컬만으로 되나</b></td></tr>
+<tr><td class="c">자막 제외</td><td class="r">0.765</td><td class="r">0.781</td><td class="r">0.630</td><td class="r">0.708</td><td>EasyOCR 이 필요한가</td></tr>
+<tr><td class="c">음성 제외</td><td class="r">0.697</td><td class="r">0.771</td><td class="r">0.561</td><td class="r">0.604</td><td><b>음성이 가장 중요</b></td></tr>
+<tr><td class="c">그림만</td><td class="r">0.470</td><td class="r">0.594</td><td class="r">0.368</td><td class="r">0.292</td><td>무작위(0.480)와 구별 안 됨</td></tr>
 </table>
+<p><small><b>설명을 빼면 네 지표가 모두 올라갑니다</b> — nDCG +0.026 · Recall +0.031 ·
+mAP +0.039 · 1위적중 +0.062. 한 지표만 좋아졌다면 지표 선택의 문제일 수 있지만,
+네 개가 같은 방향이면 그렇게 보기 어렵습니다.</small></p>
 <div class="key">
 <b>가장 중요한 발견 — 신호의 역할이 질문 유형에 따라 정반대입니다.</b><br>
 <b>재료·분량</b> 질문은 자막 위주가 유의하게 낫고(+0.084, 95% [+0.037, +0.139]),

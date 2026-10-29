@@ -233,18 +233,22 @@ def show(results: list[dict[str, Any]]) -> None:
     w = max(len(r["label"]) for r in results) + 2
     qw = max((len(r["why"]) for r in results), default=0) + 2
 
-    print(chr(10) + "=" * 78)
+    print(chr(10) + "=" * 96)
     print("제거법 — 신호 4개 전수 조합 (2^4-1 = 15)")
     print("=" * 78)
-    print(f"{'#':<3}{'조건':<{w}}{'nDCG@5':>9}{'기준대비':>10}   {'답하는 질문':<{qw}}")
-    print("-" * 78)
+    # ⚠ 네 지표를 다 보여줍니다. 예전에는 nDCG 만 찍어서, 원자료에 Recall·mAP·1위적중이
+    #   들어 있는데도 "그 값은 없나요?" 라는 질문을 받았습니다.
+    print(f"{'#':<3}{'조건':<{w}}{'nDCG@5':>9}{'대비':>8}"
+          f"{'Recall@5':>10}{'mAP':>8}{'1위적중':>9}   {'답하는 질문':<{qw}}")
+    print("-" * 96)
     for i, r in enumerate(results, start=1):
         o = r["overall"]
         gap = "" if i == 1 else f"{o['ndcg'] - base['overall']['ndcg']:+.3f}"
-        print(f"{i:<3}{r['label']:<{w}}{o['ndcg']:>9.3f}{gap:>10}   {r['why']:<{qw}}")
+        print(f"{i:<3}{r['label']:<{w}}{o['ndcg']:>9.3f}{gap:>8}"
+              f"{o['recall']:>10.3f}{o['ap']:>8.3f}{o['hit1']:>9.3f}   {r['why']:<{qw}}")
 
     print(chr(10) + f"{'유형별 nDCG@5':<{w + 3}}" + "".join(f"{t:>12}" for t in ev.TYPES))
-    print("-" * 78)
+    print("-" * 96)
     for i, r in enumerate(results, start=1):
         cells = "".join(
             f"{r['by_type'][t]['ndcg']:>12.3f}" if t in r["by_type"] else f"{'-':>12}"
